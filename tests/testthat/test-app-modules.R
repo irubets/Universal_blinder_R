@@ -347,3 +347,99 @@ test_that("Study tab: saved settings are shown and can be reset to the defaults 
     expect_match(output$status$html, "the defaults")
   })
 })
+
+# ---- Workflow 3 in the app ---------------------------------------------------------------------------------------
+lab_inputs <- function(session, on = TRUE) {
+  session$setInputs(results_file = "lab_results.csv", sheet = "", analyte_mode = "several", check_dataset = "",
+                    col_subject = "SUBJECT_ID", col_visit = "VISIT_NAME", col_nominal_time = "HOUR NOMINAL",
+                    col_result = "CONCENTRATION", col_unit = "UNIT", col_lloq = "LLOQ", col_analyte = "ANALYTE",
+                    col_specimen = "SPECIMEN", col_timepoint_name = "", keep_cols = c("RUN_DATE", "COMMENT"),
+                    lab_release_on = on)
+}
+
+test_that("Prepare PC tab: the Workflow 3 switch is saved and Check matching shows the counts", {
+  s <- make_lab_study()
+  st <- app_state(s$ub)
+  shiny::testServer(mod_prepare_pc_server, args = list(state = st), {
+    session$flushReact()
+    lab_inputs(session, on = TRUE)
+    o <- ub_read_options(s$ub)
+    expect_true(.ub_lab_release_on(o))
+    expect_setequal(unlist(o$lab_release$keep_columns), c("RUN_DATE", "COMMENT"))
+    expect_equal(o$prepare_pc$columns$result, "CONCENTRATION")
+    session$setInputs(check_matching = 1)
+    h <- output$match_ui$html
+    expect_match(h, "matched")
+    expect_match(h, "999-999")
+    expect_false(dir.exists(file.path(s$ub, "private", "lab")))          # Check matching writes nothing
+  })
+})
+
+test_that("Prepare PC tab: an unmatched stop proposes Workflow 3; a settings error does not", {
+  s <- make_lab_study()
+  st <- app_state(s$ub)
+  shiny::testServer(mod_prepare_pc_server, args = list(state = st), {
+    session$flushReact()
+    lab_inputs(session, on = FALSE)
+    expect_false(.ub_lab_release_on(ub_read_options(s$ub)))
+    session$setInputs(run = 1)                                          # the 26 h row, the repeat and the stranger don't match
+    h <- output$run_msg$html
+    expect_match(h, "Nothing was written")
+    expect_match(h, "could not be matched to PC")
+    expect_match(h, "Switch to Workflow 3")
+    session$setInputs(to_workflow3 = 1)
+    expect_true(.ub_lab_release_on(ub_read_options(s$ub)))
+    expect_match(output$match_ui$html, "matched")
+    session$setInputs(col_result = "", run = 2)                          # a settings error: no Workflow 3 prompt
+    expect_false(grepl("Switch to Workflow 3", output$run_msg$html))
+  })
+})
+
+test_that("Blind & QC: the PC window offers Workflow 3; with Workflow 3 on, the run goes and reports the lab file", {
+  s <- make_lab_study()
+  o <- ub_read_options(s$ub); o$lab_release$enabled <- FALSE; ub_write_options(s$ub, o, backup = FALSE)
+  st <- app_state(s$ub)
+  shiny::testServer(mod_blind_server, args = list(state = st), {
+    session$setInputs(run = 1)                                          # PC without results, lab file not merged: asks first
+    expect_null(result())
+    session$setInputs(to_workflow3_modal = 1)
+    expect_equal(st$went, "prepare_pc")
+    expect_false(is.null(st$wf3_request))
+  })
+  o$lab_release$enabled <- TRUE; ub_write_options(s$ub, o, backup = FALSE)
+  st2 <- app_state(s$ub)
+  shiny::testServer(mod_blind_server, args = list(state = st2), {
+    session$setInputs(run = 1)                                          # no window: the first run goes (codebook stop)
+    expect_false(is.null(result()))
+    cb <- ub_codebook_read(s$ub); cb$CHECK <- ""; cb$BLINDED_VALUE[cb$BLINDED_VALUE == "?"] <- "-"; ub_codebook_write(s$ub, cb)
+    ub_codebook_confirm_review(s$ub, "Test")
+    session$setInputs(run = 2)
+    expect_true(result()$released)
+    expect_match(output$run_result$html, "Lab file released: \\d+ rows, \\d+ matched to PC")
+  })
+})
+
+test_that("the PC notice names Workflow 3, and says so when it is on", {
+  s <- make_lab_study()
+  pc <- ub_check_pc_results(s$ub)
+  on <- as.character(.ub_pc_notice(pc, list(ub_dir = s$ub), shiny::NS("x")))
+  expect_match(on, "Workflow 3: the lab file will be released blinded next to PC")
+  o <- ub_read_options(s$ub); o$lab_release$enabled <- FALSE; ub_write_options(s$ub, o, backup = FALSE)
+  off <- as.character(.ub_pc_notice(pc, list(ub_dir = s$ub), shiny::NS("x")))
+  expect_match(off, "Go to Prepare PC")
+  expect_match(off, "release the lab file blinded \\(Workflow 3\\)")
+})
+
+test_that("Pre-flight: a row proposes Workflow 3 only while it is off, and Apply leaves it as a choice", {
+  s <- make_lab_study()
+  o <- ub_read_options(s$ub)
+  expect_false(any(ub_preflight(s$ub, o)$code == "workflow3_possible"))
+  o$lab_release$enabled <- FALSE
+  r <- ub_preflight(s$ub, o)
+  i <- which(r$code == "workflow3_possible")
+  expect_length(i, 1)
+  expect_match(r$message[i], "Workflow 3")
+  ub_write_options(s$ub, o, backup = FALSE)
+  a <- ub_preflight_apply(s$ub, r$suggestion[i])
+  expect_equal(a$applied, 0); expect_length(a$choose, 1)
+})

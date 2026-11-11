@@ -99,6 +99,14 @@ ub_preflight <- function(folder, options = NULL) {
         "No exposure dataset (EX, EC, ADEX or ADEC) in the input folder: drug names in treatment text will not be learned.",
         "Copy an exposure dataset (ex.xpt, ec.xpt or adex.xpt) into the input folder, if the study has one.")
   lab <- tryCatch(ub_lab_files(folder), error = function(e) character())
+  pcr <- tryCatch(ub_check_pc_results(folder), error = function(e) NULL)
+  if (!is.null(pcr) && identical(pcr$status, "lab_file_not_merged") && !.ub_lab_release_on(options))
+    add("info", "workflow3_possible", "PC", "PCORRES",
+        paste0("PC has no concentrations and a lab results file is in input (", paste(pcr$lab_files, collapse = ", "),
+               "). Put the results into PC (Prepare PC, Workflow 2); if they can't be matched to PC, release the lab ",
+               "file blinded next to PC instead (Workflow 3)."),
+        "Prepare PC tab: put the results into PC (Workflow 2), or turn on 'release the lab file blinded instead' (Workflow 3).",
+        paste(pcr$lab_files, collapse = ", "))
 
   for (i in seq_along(files)) {
     n <- names_u[i]

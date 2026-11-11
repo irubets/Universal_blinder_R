@@ -58,7 +58,20 @@ mod_prepare_pc_ui <- function(id) {
                  shiny::actionButton(ns("run"), "Put the results into PC", class = "btn-success"),
                  shiny::actionButton(ns("open_report"), "Open highlighted HTML report", class = "btn-outline-secondary")),
       shiny::uiOutput(ns("run_msg")),
-      shiny::uiOutput(ns("run_tables")))
+      shiny::uiOutput(ns("run_tables"))),
+    bslib::card(
+      bslib::card_header("4. Workflow 3: the results can't be put into PC"),
+      shiny::p(class = "text-muted",
+               "When times don't line up or rows are missing on one side, the lab file can be released blinded next to PC ",
+               "instead: same subject codes, analyte codes and concentration factors as PC, in the lab's own columns, plus ",
+               "PC_UBRECID (the PC record a row matches) and MATCH_STATUS. The recipient merges what matches. It uses the ",
+               "file, columns, analytes and translations above."),
+      shiny::checkboxInput(ns("lab_release_on"),
+                           "The results can't be merged into PC: release the lab file blinded instead (Workflow 3)", width = "100%"),
+      shiny::selectizeInput(ns("keep_cols"), "Other lab columns to release (optional; dates are shifted, drug names coded)",
+                            choices = character(), multiple = TRUE, width = "100%"),
+      shiny::actionButton(ns("check_matching"), "Check matching", class = "btn-outline-primary"),
+      shiny::uiOutput(ns("match_ui")))
   )
 }
 
@@ -71,6 +84,7 @@ mod_prepare_pc_server <- function(id, state) {
                                   time = .ub_df(c("LAB_TIMEPOINT", "HOURS")))
     result <- shiny::reactiveVal(NULL)
     msg <- shiny::reactiveVal(NULL)
+    match_res <- shiny::reactiveVal(NULL)
 
     pc_status <- shiny::reactive({ state$tick; shiny::req(state$ub_dir); tryCatch(ub_check_pc_results(state$ub_dir), error = function(e) NULL) })
     output$pc_state <- shiny::renderUI({
@@ -117,12 +131,18 @@ mod_prepare_pc_server <- function(id, state) {
         else if (!is.null(pc) && "PCTESTCD" %in% names(pc)) shiny::updateTextInput(session, "pctestcd", value = unique(pc$PCTESTCD)[1])
       }
       if (length(lf) && !is.null(s$columns)) read_cols(s$results_file %||% lf[1], s$sheet, s$columns)
+      lr <- tryCatch(ub_read_options(state$ub_dir)$lab_release, error = function(e) NULL)
+      shiny::updateCheckboxInput(session, "lab_release_on", value = isTRUE(as.logical(unlist(lr$enabled))[1]))
+      match_res(NULL)
     })
 
     read_cols <- function(file, sheet = NULL, preset = NULL) {
       h <- tryCatch(ub_prepare_pc_columns(state$ub_dir, file, if (is.null(sheet) || !nzchar(sheet)) NULL else sheet),
                     error = function(e) { msg(.ub_notice("red", conditionMessage(e))); character() })
       cols(h)
+      kept <- tryCatch(unlist(ub_read_options(state$ub_dir)$lab_release$keep_columns), error = function(e) NULL)
+      hint <- ifelse(grepl("ID|ACCESSION|BARCODE", h, ignore.case = TRUE), paste0(h, " (an ID? keep only if needed)"), h)
+      shiny::updateSelectizeInput(session, "keep_cols", choices = stats::setNames(h, hint), selected = intersect(kept, h))
       guess <- function(role) {
         if (!is.null(preset[[role]])) return(preset[[role]])
         pat <- c(subject = "SUBJ|USUBJID|PATIENT", visit = "VISIT", nominal_time = "NOMINAL|HOUR|NOM",
@@ -172,8 +192,51 @@ mod_prepare_pc_server <- function(id, state) {
       s[!vapply(s, is.null, TRUE)]
     }
     save <- function() {
-      o <- ub_read_options(state$ub_dir); o$prepare_pc <- settings(); ub_write_options(state$ub_dir, o)
+      o <- ub_read_options(state$ub_dir); o$prepare_pc <- settings()
+      if (!is.null(input$lab_release_on))
+        o$lab_release <- list(enabled = isTRUE(input$lab_release_on), keep_columns = as.list(as.character(input$keep_cols)))
+      ub_write_options(state$ub_dir, o)
     }
+    # Workflow 3 switch: saved as soon as it changes (the rest of the settings with 'Save settings' or a run)
+    shiny::observeEvent(list(input$lab_release_on, input$keep_cols), {
+      shiny::req(state$ub_dir, !is.null(input$lab_release_on))
+      o <- ub_read_options(state$ub_dir)
+      keep <- if (is.null(input$keep_cols)) unlist(o$lab_release$keep_columns) else input$keep_cols
+      new <- list(enabled = isTRUE(input$lab_release_on), keep_columns = as.list(as.character(keep)))
+      if (identical(.ub_lab_release_on(o), new$enabled) && setequal(unlist(o$lab_release$keep_columns), unlist(new$keep_columns))) return()
+      o$lab_release <- new; ub_write_options(state$ub_dir, o)
+      state$settings_reload <- Sys.time()
+    }, ignoreInit = TRUE)
+    # Check matching: how the lab rows match PC, from the saved settings; writes nothing
+    run_check <- function() match_res(tryCatch(ub_lab_release_prepare(state$ub_dir, write = FALSE), error = function(e) e))
+    shiny::observeEvent(input$check_matching, { .ub_need_study(state$ub_dir); save(); run_check() })
+    output$match_ui <- shiny::renderUI({
+      p <- match_res(); if (is.null(p)) return(NULL)
+      if (inherits(p, "error")) return(.ub_notice("red", conditionMessage(p)))
+      k <- p$counts
+      lo <- p$left_out
+      shiny::tagList(
+        .ub_notice(if (k[["matched"]] >= k[["rows"]] / 2) "ok" else "amber",
+          shiny::strong(sprintf("%d lab row(s) would be released: %d matched to PC, %d with no PC record at this visit/time, %d with several PC records. ",
+                                k[["rows"]], k[["matched"]], k[["no_pc"]], k[["several"]])),
+          sprintf("%d row(s) left out (subject or analyte not in PC).", k[["left_out"]]),
+          if (!.ub_lab_release_on(ub_read_options(state$ub_dir))) shiny::div("Workflow 3 is off: turn the switch on to release the lab file at the next run.")),
+        if (nrow(lo)) shiny::tags$table(class = "table table-sm small",
+          shiny::tags$tr(lapply(c("Lab row", "Subject", "Analyte", "Why left out"), shiny::tags$th)),
+          lapply(seq_len(nrow(lo)), function(i) shiny::tags$tr(lapply(c(lo$lab_row[i], lo$subject[i], lo$analyte[i], lo$reason[i]),
+                                                                    function(v) shiny::tags$td(as.character(v)))))))
+    })
+    # turn Workflow 3 on (from the prompt after an unmatched run, or from another tab) and show the matching
+    enable_wf3 <- function() {
+      o <- ub_read_options(state$ub_dir); o$lab_release$enabled <- TRUE
+      if (is.null(o$lab_release$keep_columns)) o$lab_release$keep_columns <- list()
+      ub_write_options(state$ub_dir, o)
+      shiny::updateCheckboxInput(session, "lab_release_on", value = TRUE)
+      state$settings_reload <- Sys.time(); state$refresh()
+      run_check()
+    }
+    shiny::observeEvent(input$to_workflow3, { .ub_need_study(state$ub_dir); enable_wf3() })
+    shiny::observeEvent(state$wf3_request, { shiny::req(state$ub_dir); enable_wf3() }, ignoreInit = TRUE)
     shiny::observeEvent(input$save, { .ub_need_study(state$ub_dir); save(); msg(.ub_notice("ok", "Settings saved in blind_options.json.")) })
 
     shiny::observeEvent(input$run, {
@@ -192,11 +255,19 @@ mod_prepare_pc_server <- function(id, state) {
       if (length(uv)) { v <- maps$visit[, c("LAB_VISIT", "PC_VISIT")]; v <- rbind(v, data.frame(LAB_VISIT = uv, PC_VISIT = "")); v$.status <- ifelse(v$PC_VISIT == "", "red", "ok"); maps$visit <- v }
       ut <- setdiff(r$unmatched_values$timepoints %||% character(), maps$time$LAB_TIMEPOINT)
       if (length(ut)) { t <- maps$time[, c("LAB_TIMEPOINT", "HOURS")]; t <- rbind(t, data.frame(LAB_TIMEPOINT = ut, HOURS = "")); t$.status <- ifelse(t$HOURS == "", "red", "ok"); maps$time <- t }
-      msg(.ub_notice(if (isTRUE(r$written)) "ok" else "red",
-                     if (isTRUE(r$written)) shiny::strong("Results put into PC. ") else shiny::strong("Nothing was written. "),
-                     shiny::tags$ul(lapply(r$messages %||% character(), shiny::tags$li)),
-                     if (length(uv) || length(ut)) "Unmatched visits/time points were added in red to the tables above: fill them in and run again.",
-                     if (isTRUE(r$written)) shiny::div("Next: tab 'Blind & QC'.")))
+      nu <- NROW(r$unmatched)
+      msg(shiny::tagList(
+        .ub_notice(if (isTRUE(r$written)) "ok" else "red",
+                   if (isTRUE(r$written)) shiny::strong("Results put into PC. ") else shiny::strong("Nothing was written. "),
+                   shiny::tags$ul(lapply(r$messages %||% character(), shiny::tags$li)),
+                   if (length(uv) || length(ut)) "Unmatched visits/time points were added in red to the tables above: fill them in and run again.",
+                   if (isTRUE(r$written)) shiny::div("Next: tab 'Blind & QC'.")),
+        # the results could not be matched: propose Workflow 3 (not after a settings error)
+        if (!isTRUE(r$written) && nu > 0)
+          .ub_notice("amber", sprintf("%d of %d lab rows could not be matched to PC. ", nu, r$n_lab %||% nu),
+                     "If translations (visit names, time points) can't fix this, release the lab file blinded instead ",
+                     "(Workflow 3): the recipient merges what matches.",
+                     shiny::div(shiny::actionButton(ns("to_workflow3"), "Switch to Workflow 3", class = "btn-sm btn-dark mt-1")))))
       state$refresh()
     })
     shiny::observeEvent(input$open_report, .ub_open_path(file.path(shiny::req(state$ub_dir), "private", "reports", "prepare_pc_report.html")))

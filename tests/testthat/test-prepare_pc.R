@@ -64,6 +64,20 @@ test_that(".ub_ppc_resolve returns one row per lab row with its PC match", {
   expect_equal(r$category[last], "subject"); expect_true(is.na(r$pc_row[last]))
 })
 
+test_that("an unknown subject or analyte code stops with a message naming PC's values", {
+  s <- ppc_study()
+  analytes <- as.list(stats::setNames(s$full$PCTESTCD, s$full$PCTEST)); analytes <- analytes[!duplicated(names(analytes))]
+  lab <- rbind(s$lab, transform(s$lab[1, ], Subject = "999-999"))
+  utils::write.csv(lab, file.path(s$folder, "input", "lab_results.csv"), row.names = FALSE)
+  r <- ub_prepare_pc(s$folder, ppc_set(visit_map = s$visits, analytes = analytes), quiet = TRUE)
+  expect_false(r$written)
+  expect_match(paste(r$messages, collapse = " "), "not in PC.USUBJID: 999-999. PC has e.g.")
+  utils::write.csv(s$lab, file.path(s$folder, "input", "lab_results.csv"), row.names = FALSE)
+  a2 <- analytes; a2[[1]] <- "NOPE"
+  r <- ub_prepare_pc(s$folder, ppc_set(visit_map = s$visits, analytes = a2), quiet = TRUE)
+  expect_match(paste(r$messages, collapse = " "), "is not in PC \\(PC has ")
+})
+
 test_that("several analytes fill PC; the original PC is kept; the log is written", {
   s <- ppc_study()
   analytes <- as.list(stats::setNames(s$full$PCTESTCD, s$full$PCTEST)); analytes <- analytes[!duplicated(names(analytes))]

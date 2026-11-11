@@ -152,11 +152,15 @@ mod_blind_server <- function(id, state) {
         return()
       }
       pc <- tryCatch(ub_check_pc_results(state$ub_dir), error = function(e) NULL)
-      if (!is.null(pc) && identical(pc$status, "lab_file_not_merged")) {
+      wf3 <- .ub_lab_release_on(ub_read_options(state$ub_dir))
+      if (!is.null(pc) && identical(pc$status, "lab_file_not_merged") && !wf3) {
         shiny::showModal(shiny::modalDialog(
           title = "PC has no results", "PC has no concentrations and a lab results file in input was not merged into PC.",
-          " Put the results into PC first (tab 'Prepare PC'), or blind PC without results on purpose.",
+          " Put the results into PC first (tab 'Prepare PC'), or, if they can't be matched to PC, release the lab file ",
+          "blinded next to PC (Workflow 3), or blind PC without results on purpose.",
           footer = shiny::tagList(shiny::actionButton(ns("to_prepare"), "Go to Prepare PC", class = "btn-primary"),
+                                  shiny::actionButton(ns("to_workflow3_modal"), "Release the lab file blinded (Workflow 3)",
+                                                      class = "btn-outline-primary"),
                                   shiny::actionButton(ns("continue_anyway"), "Continue anyway", class = "btn-outline-danger"),
                                   shiny::modalButton("Cancel"))))
         return()
@@ -164,15 +168,24 @@ mod_blind_server <- function(id, state) {
       run(FALSE)
     })
     shiny::observeEvent(input$to_codebook_gate, { shiny::removeModal(); state$goto("codebook") })
+    # Workflow 3: Prepare PC turns the switch on and shows how the lab rows match PC
+    shiny::observeEvent(input$to_workflow3_modal, { shiny::removeModal(); state$wf3_request <- Sys.time(); state$goto("prepare_pc") })
+    shiny::observeEvent(input$go_wf3, state$goto("prepare_pc"))
     shiny::observeEvent(input$to_prepare, { shiny::removeModal(); state$goto("prepare_pc") })
     shiny::observeEvent(input$continue_anyway, { shiny::removeModal(); run(TRUE) })
 
     output$run_result <- shiny::renderUI({
       r <- result()
       if (is.null(r)) return(NULL)
-      if (isTRUE(r$released))
+      if (isTRUE(r$released)) {
+        lf <- list.files(file.path(state$ub_dir, "output"), pattern = "_blinded\\.csv$", full.names = TRUE)
+        lab <- if (length(lf)) tryCatch({ m <- .ub_lab_read_out(lf[1])$MATCH_STATUS
+          sprintf("Lab file released: %d rows, %d matched to PC (%s). ", length(m), sum(m == "matched"), basename(lf[1])) },
+          error = function(e) NULL)
         return(.ub_notice(if (identical(r$qc, "WARN")) "amber" else "ok", shiny::strong("FINISHED -- QC ", r$qc, ". "),
-                          "The blinded datasets are in output. Read qc_summary.md first (tab '3. QC result'), then share only output."))
+                          "The blinded datasets are in output. ", lab,
+                          "Read qc_summary.md first (tab '3. QC result'), then share only output."))
+      }
       cb <- grepl("codebook", r$error %||% "", ignore.case = TRUE)
       if (cb)
         return(.ub_notice("amber", shiny::strong("NOTHING WAS RELEASED. "), r$error,

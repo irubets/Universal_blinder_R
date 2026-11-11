@@ -62,7 +62,9 @@ mod_workflow_server <- function(id, state) {
              if (nrow(s$datasets)) paste(nrow(s$datasets), "dataset(s) in input. ") else "Nothing in input yet. ", "study", "Go to Study"),
         step(3, "Workflow 2 only: put the lab results into PC",
              if (!wf2) "na" else if (identical(s$pc$status, "lab_file_not_merged")) "todo" else "todo",
-             if (!wf2) "Not needed (PC has results, or no PC). " else "PC has no concentrations. ", if (wf2) "prepare_pc", "Go to Prepare PC"),
+             if (!wf2) "Not needed (PC has results, or no PC). "
+             else "PC has no concentrations. If the results can't be matched to PC, release the lab file blinded instead (Workflow 3, same tab). ",
+             if (wf2) "prepare_pc", "Go to Prepare PC"),
         step(4, "First run: builds the key and the codebook, then stops once", if (s$codebook_rows) "done" else "todo",
              "Run the blinding once. ", "blind", "Go to Blind & QC"),
         step(5, "Review the codebook and confirm the review",

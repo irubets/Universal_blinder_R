@@ -175,6 +175,7 @@ mod_study_server <- function(id, state) {
     .ub_settings_reset_server(input, ns, state)
     shiny::observeEvent(input$recheck_pc, state$refresh())
     shiny::observeEvent(input$go_prepare, state$goto("prepare_pc"))
+    shiny::observeEvent(input$go_wf3, state$goto("prepare_pc"))
   })
 }
 
@@ -227,8 +228,14 @@ mod_study_server <- function(id, state) {
                             "(Study tab, card 2: click its row to highlight it, then click 'Copy selected files to input') and click Recheck. ",
                             "You can also carry on without it.",
                             shiny::div(shiny::actionButton(ns("recheck_pc"), "Recheck", class = "btn-sm btn-outline-dark mt-1"))),
-    lab_file_not_merged = .ub_notice("amber", shiny::strong("PC has no concentrations and a lab results file is in input. "),
-                                     "Put the results into PC first (Workflow 2).",
-                                     shiny::div(shiny::actionButton(ns("go_prepare"), "Go to Prepare PC", class = "btn-sm btn-dark mt-1"))),
+    lab_file_not_merged = if (isTRUE(tryCatch(.ub_lab_release_on(ub_read_options(state$ub_dir)), error = function(e) FALSE)))
+      .ub_notice("info", shiny::strong("Workflow 3: the lab file will be released blinded next to PC"),
+                 " (PC itself has no concentrations). ",
+                 shiny::actionLink(ns("go_prepare"), "Change this in Prepare PC"))
+    else .ub_notice("amber", shiny::strong("PC has no concentrations and a lab results file is in input. "),
+                    "Put the results into PC first (Workflow 2).",
+                    shiny::div(class = "d-flex flex-wrap gap-2 align-items-center mt-1",
+                      shiny::actionButton(ns("go_prepare"), "Go to Prepare PC", class = "btn-sm btn-dark"),
+                      shiny::actionLink(ns("go_wf3"), "or, if the results can't be matched to PC, release the lab file blinded (Workflow 3)"))),
     .ub_notice("info", pc$message %||% ""))
 }

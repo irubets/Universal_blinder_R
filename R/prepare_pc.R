@@ -346,6 +346,8 @@ ub_prepare_pc <- function(folder, settings, write = TRUE, quiet = FALSE) {
   names(lab) <- trimws(names(lab))
   r <- .ub_ppc_resolve(lab, pc, s)
   pc_key <- attr(r, "pc_key")
+  ids <- unique(pc$USUBJID)                                              # for the messages below
+  pc_codes <- if ("PCTESTCD" %in% names(pc)) sort(unique(as.character(pc$PCTESTCD))) else character()
   st$res$n_lab <- nrow(r)
   say("Results file: ", nrow(r), " rows.  PC: ", nrow(pc), " records.")
 
