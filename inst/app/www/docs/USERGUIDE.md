@@ -10,17 +10,18 @@ Everything is done in the **app**. You do not need to write or edit code.
 3. [The workflow at a glance](#the-workflow-at-a-glance)
 4. [Workflow 1: PC has its results](#workflow-1-pc-has-its-results)
 5. [Workflow 2: PC without results, results in a separate file](#workflow-2-pc-without-results-results-in-a-separate-file)
-6. [Which datasets can be blinded](#which-datasets-can-be-blinded)
-7. [The codebook](#the-codebook-every-replaced-value-and-its-code)
-8. [The study folder: what you may share, and what never](#the-study-folder-what-you-may-share-and-what-never)
-9. [What the run does](#what-the-run-does)
-10. [Study settings](#study-settings)
-11. [When QC reports WARN or FAIL](#when-qc-reports-warn-or-fail)
-12. [Reviewing the blinded data and getting the original records back](#reviewing-the-blinded-data-and-getting-the-original-records-back)
-13. [The AI assistant](#the-ai-assistant)
-14. [Start a study again from scratch](#start-a-study-again-from-scratch)
-15. [New data for the same study](#new-data-for-the-same-study)
-16. [Troubleshooting](#troubleshooting)
+6. [Workflow 3: the results can't be put into PC: release the lab file blinded](#workflow-3-the-results-cant-be-put-into-pc-release-the-lab-file-blinded)
+7. [Which datasets can be blinded](#which-datasets-can-be-blinded)
+8. [The codebook](#the-codebook-every-replaced-value-and-its-code)
+9. [The study folder: what you may share, and what never](#the-study-folder-what-you-may-share-and-what-never)
+10. [What the run does](#what-the-run-does)
+11. [Study settings](#study-settings)
+12. [When QC reports WARN or FAIL](#when-qc-reports-warn-or-fail)
+13. [Reviewing the blinded data and getting the original records back](#reviewing-the-blinded-data-and-getting-the-original-records-back)
+14. [The AI assistant](#the-ai-assistant)
+15. [Start a study again from scratch](#start-a-study-again-from-scratch)
+16. [New data for the same study](#new-data-for-the-same-study)
+17. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -61,6 +62,7 @@ Colours mean the same in every table and report: **red** = must fix, **amber** =
 |---|---|
 | **has the concentrations** (PCORRES, PCSTRESC, PCSTRESN filled in), or there is no PC | **Workflow 1**: blind it as it is |
 | has the sample records but **no concentrations**, and the lab sent them in a separate CSV/Excel file | **Workflow 2**: first put the results into PC (*Prepare PC*), then continue with step 2 of Workflow 1 |
+| as Workflow 2, but the lab's results **can't be matched** to PC (times don't line up, rows missing on one side) | **Workflow 3**: release the lab file blinded next to PC; the recipient merges what matches |
 
 Workflow 1 in one line: **Study → Blind & QC: 1. Pre-flight (until nothing is left to decide) → 2. Run blinding → Codebook review (answer, confirm) → 2. Run blinding again → 3. QC result → share `output`.** Two loops can send you back: the pre-flight loop (step 2) and the run loop (steps 3 to 5).
 
@@ -173,6 +175,41 @@ Good to know:
 - Both spellings `BQL<(0.500)` and `BLQ<(0.500)` are understood; the LLOQ inside them is blinded too.
 - The results file can stay in `input`; it is not blinded or released.
 - If PC has no results and a results file in `input` was not merged, *Run blinding* asks whether to go to Prepare PC or **continue anyway**. Your choice is recorded in the log.
+
+## Workflow 3: the results can't be put into PC: release the lab file blinded
+
+Sometimes the lab's results cannot be matched to PC completely, for example because unscheduled samples or repeats have no PC record, or the nominal times differ. *Prepare PC* then writes nothing. Workflow 3 releases the **lab file itself**, blinded with the same key as PC, next to the blinded PC, so that the recipient can merge what matches.
+
+**Where the app proposes it.** The app suggests Workflow 3 in three places; none of them switches by itself:
+- *Prepare PC*, after "Nothing was written" because lab rows didn't match: an amber box says how many rows could not be matched and offers **Switch to Workflow 3**.
+- The PC notice on the Study and *Run blinding* tabs: next to *Go to Prepare PC*, the link "or, if the results can't be matched to PC, release the lab file blinded (Workflow 3)".
+- The *Run blinding* window "PC has no results": the button **Release the lab file blinded (Workflow 3)**.
+
+Each one turns the switch on in *Prepare PC* and runs *Check matching*, so you see the counts before you blind. The *Pre-flight* also lists a reminder row while the switch is off.
+
+**Steps**
+1. **Prepare PC tab, cards 1 and 2:** choose the lab file and its columns, the analytes, and the visit and time translations, as for Workflow 2. Translations are optional: they only raise the number of rows that match.
+2. **Card 4:** tick **"The results can't be merged into PC: release the lab file blinded instead (Workflow 3)"**. Optionally choose **other lab columns to release** (for example a run date or a comment). Dates in them are shifted like PC's dates and drug or analyte names are replaced by their codes. Do not keep identifier columns (accession numbers, barcodes, run IDs): they are not recognised as identifiers. The list marks names that look like one.
+3. Click **Check matching**: it shows how many rows match a PC record, how many don't, and which rows are left out and why. It writes nothing.
+4. **Blind & QC:** run the pre-flight and *Run blinding* as in Workflow 1. The lab file is blinded in the same run as PC, with the same key, and checked by the same QC. The *FINISHED* message adds "Lab file released: N rows, M matched to PC".
+
+**What the recipient gets:** `output\<lab file name>_blinded.csv` (CSV, even when the lab sent Excel), with:
+
+| Column | Content |
+|---|---|
+| `UBRECID` | the row's own random record identifier (quote it in findings) |
+| `LAB_ROW` | the row's number in the original lab file (header = row 1) |
+| the lab's columns, in its own order and names | subject: the blinded USUBJID (the same as in the blinded PC); analyte: the blinded code (or name); concentration: scaled with the same per-subject factor as PC, same decimals, BLQ/BQL text kept with the blinded LLOQ inside; LLOQ: blinded like PC.PCLLOQ; visit, nominal time, time-point name, specimen, unit: as in the lab file |
+| `PC_UBRECID` | the UBRECID of the PC record the row matches, in the PC released with it; empty when there is none |
+| `MATCH_STATUS` | `matched`, `no PC record at this visit/time`, or `several PC records` |
+
+**How to merge:** matched rows on `PC_UBRECID` = PC's `UBRECID`. The other rows can be compared on USUBJID, visit, nominal time and analyte. Two lab rows that match the same PC record (for example a repeat analysis) are both released with the same `PC_UBRECID`: the recipient decides which counts.
+
+**Rows left out:** rows whose subject is not in PC (or matches several subjects), and rows whose analyte is not PC's. They are listed with the reason in `private\reports\lab_release_report.html`; fix the subject IDs or the analyte settings and blind again.
+
+**QC:** every check that runs on PC also runs on the lab file. A column name that contains a drug name fails QC. A **WARN** `lab_match_rate` says that fewer than half of the lab rows matched a PC record: check the visit and time translations.
+
+**Retrieve:** a finding with `DATASET` = the lab file's name (for example `lab_results.csv`, `lab_results` or `lab_results_blinded.csv`) and the `UBRECID` of each row returns the original lab rows. Retrieve refuses if the lab file in `input` changed since the release.
 
 ## Which datasets can be blinded
 
@@ -400,6 +437,9 @@ Copy the new files into `input` (Study tab) and run the blinding again. The key 
 | `... new row(s) were added to ...\private\codebook.csv` | Expected on the first run and whenever the data brings a new value: review the codebook, confirm the review, and run again. |
 | `The codebook review is not confirmed: ...` (from `blind.R`) | The same check as in the app: answer the codebook rows, then confirm in the app (*I have reviewed the codebook*) or in R: `universalblinder::ub_codebook_confirm_review("<UB folder>", "<your name>")`. Then Source `blind.R` again. A `blind.R` copied by an older version does not check this: replace it with the package's `template_folder/blind.R`. |
 | *Confirm the codebook review first* (Run blinding does not start) | Codebook rows still need an answer, the review was not confirmed, or a code changed after it. Open Codebook review, answer the rows, type your name and click *I have reviewed the codebook*. |
+| `keep_columns: X is not a column of ...` / `is already a role column` | Workflow 3: the extra column to release must be a column of the lab file and not one of the role columns (Prepare PC, card 4). |
+| `LABPC: the lab file changed since the release` (Retrieve) | The lab file in `input` is not the one that was blinded. Put the original back, or blind again. |
+| QC WARN `lab_match_rate` | Workflow 3: fewer than half of the lab rows matched a PC record. Add visit or time translations in Prepare PC, then *Check matching*. |
 | `... codebook.csv needs an answer -- line N: ...` | A row still has `?`, or a spelling names a code that no drug or analyte has. |
 | `... parameter(s) [...] are not classified in param_scaling_tables.PK_PARAMETERS` | A PK parameter code the configuration does not know; classify it under Configuration changes. |
 | QC `dose_ratio_reveals_bsa` | Leave DOSEA out (strongly recommended), and DOSEP if you wish: accept the *Pre-flight* rows `dose_reveals_bsa` with *Apply*. A *Blank where* rule on DOSEP only works if its condition variable (e.g. DOSEPU) exists in that dataset. |

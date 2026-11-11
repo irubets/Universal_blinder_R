@@ -73,6 +73,8 @@ test_that("USERGUIDE.html is rebuilt after USERGUIDE.md changes, and the guide's
   h <- gsub("\\s+", " ", paste(readLines(html, warn = FALSE, encoding = "UTF-8"), collapse = " "))   # pandoc wraps lines
   emb <- grepl("data:image/svg", h, fixed = TRUE)
   h <- gsub("<[^>]+>", "", h)                                     # headings may hold <code>
+  for (e in list(c("&#39;", "'"), c("&quot;", "\""), c("&lt;", "<"), c("&gt;", ">"), c("&amp;", "&")))
+    h <- gsub(e[1], e[2], h, fixed = TRUE)                         # pandoc escapes ' as &#39;
   h <- gsub("\\s+", " ", h)
   heads <- sub("^#+ ", "", grep("^#{2,3} ", readLines(md, warn = FALSE, encoding = "UTF-8"), value = TRUE))
   heads <- gsub("[*`]", "", heads)
