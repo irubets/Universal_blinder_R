@@ -240,6 +240,20 @@
       ],
       "suppress_vars": []
     },
+    "LABPC": {
+      "_comment": "Workflow 3: the bioanalytical lab file, made PC-shaped by ub_lab_release_prepare(). PC's rules for the results; LVISIT, LTIME, LTPT, LSPEC (the lab's own key texts), LABROW, PCSRCROW and MATCHST are kept; kept extra columns K01... get text_vars at run time, K01DTC... are dates (shifted by name).",
+      "domain_type": "SDTM",
+      "id_vars": {"studyid": "STUDYID", "usubjid": "USUBJID"},
+      "analyte_numeric": {"analyte_var": "PCTESTCD", "variables": ["PCSTRESN"], "precision_from": "PCSTRESC", "lloq_vars": ["PCLLOQ"]},
+      "derived_text": [
+        {"target": "PCSTRESC", "source": "PCSTRESN", "bql_ref": "PCORRES", "lloq_var": "PCLLOQ"},
+        {"target": "PCORRES", "source": "PCSTRESN", "bql_ref": "PCORRES", "lloq_var": "PCLLOQ"}
+      ],
+      "text_vars": {},
+      "exact_vars": {"PCTESTCD": "analyte_code", "PCTEST": "analyte_name"},
+      "analyte_pair": ["PCTESTCD", "PCTEST"],
+      "suppress_vars": []
+    },
     "ADEX": {
       "domain_type": "ADAM",
       "id_vars": {

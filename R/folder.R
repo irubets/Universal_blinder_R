@@ -182,7 +182,16 @@ ub_check_pc_results <- function(folder) {
                             paste(sort(grep("^_", names(cfg$dataset_patterns), value = TRUE, invert = TRUE)), collapse = " "),
                             " -- rename the file or add a dataset alias")
   pcr <- .ub_pc_results(folder, datasets)
-  if (pcr$status == "lab_file_not_merged") {
+  lab_on <- .ub_lab_release_on(options)
+  if (lab_on) {
+    # Workflow 3: the lab file is released blinded next to PC, as the dataset LABPC
+    lp <- ub_lab_release_prepare(folder, options, write = TRUE)
+    datasets$LABPC <- normalizePath(file.path(folder, "private", "lab", "labpc.xpt"))
+    kt <- lp$layout$columns$labpc_name[lp$layout$columns$kind == "kept_text"]
+    if (length(kt)) options$config_overrides$datasets$LABPC$text_vars <- as.list(stats::setNames(rep("any", length(kt)), kt))
+    say("Workflow 3: ", lp$lab_file, " is released blinded (LABPC): ", lp$counts[["rows"]], " row(s), ",
+        lp$counts[["matched"]], " matched to PC, ", lp$counts[["left_out"]], " left out (private/reports/lab_release_report.html)")
+  } else if (pcr$status == "lab_file_not_merged") {
     if (!continue_without_results)
       ub_error(pcr$message, " Nothing was blinded.")
     say("WARNING: ", pcr$message)
@@ -191,7 +200,7 @@ ub_check_pc_results <- function(folder) {
     say("WARNING: ", pcr$message)
   }
 
-  raw <- options
+  raw <- options[setdiff(names(options), c("lab_release", "prepare_pc"))]   # not study-file entries
   raw$paths <- paths
   raw$datasets <- datasets
   raw$output_format <- "xpt"

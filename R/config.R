@@ -123,7 +123,10 @@ ub_study_from_list <- function(raw, root, path = NULL) {
 #' @param study a `ub_study`
 #' @param name dataset name (e.g. "ADNCA")
 #' @export
-ub_source_path <- function(study, name) file.path(study$paths$source_dir, study$datasets[[name]])
+ub_source_path <- function(study, name) {
+  f <- study$datasets[[name]]
+  if (grepl("^([A-Za-z]:|/|\\\\)", f)) f else file.path(study$paths$source_dir, f)   # absolute: e.g. LABPC in private/lab
+}
 #' @rdname ub_source_path
 #' @export
 ub_out_name <- function(study, name) paste0(tolower(tools::file_path_sans_ext(basename(study$datasets[[name]]))), ".", study$output_ext)

@@ -126,6 +126,18 @@ test_that("PC without results and a results file in input: stop, or continue by 
   expect_equal(ub_check_pc_results(f)[c("has_pc", "status")], list(has_pc = FALSE, status = "no_pc"))
 })
 
+test_that("PC blinded without any result is released (QC copes with a dataset without results)", {
+  f <- syn_folder()
+  p <- file.path(f, "input", "pc.xpt")
+  x <- ub_read_dataset(p)
+  x$data$PCORRES <- ""; x$data$PCSTRESC <- ""; x$data$PCSTRESN <- NA_real_
+  ub_write_dataset(x$data, p, x$meta, name = "PC")
+  ub_blind_folder(f, RENAMES, quiet = TRUE)                                        # stops once for the codebook
+  res <- ub_blind_folder(f, RENAMES, quiet = TRUE)
+  expect_true(res$released)
+  expect_true(res$qc %in% c("PASS", "WARN"))
+})
+
 test_that("the log goes to private/logs/blind.log by default; on_progress sees every step", {
   f <- syn_folder()
   calls <- list()

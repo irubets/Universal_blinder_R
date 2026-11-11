@@ -137,6 +137,7 @@ ub_run_qc <- function(study, keys, blinded, blind_reports = list()) {
       for (var in intersect(.chr(pn$variables), names(df))) {
         v <- suppressWarnings(as.numeric(df[[var]]))
         ok <- !is.na(v) & ub_is_plain_number(prec)
+        if (!any(ok)) next                                   # no result at all (e.g. PC delivered without results)
         d <- ub_text_decimals(prec[ok])
         over <- sum(abs(v[ok] - round(v[ok], d)) > 1e-9 * pmax(1, abs(v[ok])))
         if (over) add("FAIL", "excess_precision", nm, var, paste0(over, " value(s) carry more decimals than their result text"))
@@ -150,9 +151,11 @@ ub_run_qc <- function(study, keys, blinded, blind_reports = list()) {
         v <- suppressWarnings(as.numeric(df[[var]]))
         if (!is.null(prec)) {
           ok <- !is.na(v) & ub_is_plain_number(prec)
-          d <- ub_text_decimals(prec[ok])
-          over <- sum(abs(v[ok] - round(v[ok], d)) > 1e-9 * pmax(1, abs(v[ok])))
-          if (over) add("FAIL", "excess_precision", nm, var, paste0(over, " value(s) carry more decimals than their result text"))
+          if (any(ok)) {                                     # no result at all (e.g. PC delivered without results)
+            d <- ub_text_decimals(prec[ok])
+            over <- sum(abs(v[ok] - round(v[ok], d)) > 1e-9 * pmax(1, abs(v[ok])))
+            if (over) add("FAIL", "excess_precision", nm, var, paste0(over, " value(s) carry more decimals than their result text"))
+          }
         }
         gmin <- if (is.null(qcfg$gcd_attack_min_records)) 5 else qcfg$gcd_attack_min_records
         g <- data.frame(u = df[[uc]], a = code, v = v, stringsAsFactors = FALSE)
