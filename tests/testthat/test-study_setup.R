@@ -82,6 +82,25 @@ test_that("settings round trip, validation of waivers, engine subset", {
   expect_length(list.files(file.path(d, "private", "settings_backup")), 1)
 })
 
+test_that("lab_release: off by default, passed to the engine only when on", {
+  expect_false(isTRUE(ub_default_options()$lab_release$enabled))
+  tpl <- jsonlite::fromJSON(file.path(ub_template_path(), "blind_options.json"), simplifyVector = FALSE)
+  expect_false(tpl$lab_release$enabled)
+  off <- ub_options_for_engine(ub_default_options())
+  expect_false(.ub_lab_release_on(off))
+  expect_false(any(c("prepare_pc", "lab_release") %in% names(off)))     # Workflows 1 and 2: the run gets what it got
+  o <- ub_default_options(); o$lab_release$enabled <- TRUE
+  e <- ub_options_for_engine(o)
+  expect_true(.ub_lab_release_on(e))
+  expect_false(is.null(e$prepare_pc))
+  expect_length(ub_validate_options(o), 0)
+  # a study saved before lab_release existed shows no change for it
+  d <- tempfile("study"); dir.create(d)
+  ub <- ub_setup_study(d, "LR")$path
+  x <- ub_read_options(ub); x$lab_release <- NULL; ub_write_options(ub, x, backup = FALSE)
+  expect_false(any(ub_settings_changes(ub)$setting == "lab_release"))
+})
+
 test_that("README files in input are not taken for lab results files", {
   d <- tempfile("study"); dir.create(d)
   ub <- ub_setup_study(d, "S1")$path

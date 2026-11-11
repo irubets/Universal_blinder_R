@@ -219,7 +219,8 @@ ub_default_options <- function() {
          list(datasets = list("AD*"), vars = list("DOSEP"), when = list(DOSEPU = list("mg/m2"))),
          list(datasets = list("EC"), vars = list("ECDOSE"), when = list(ECDOSU = list("mg/m2"))),
          list(datasets = list("EX"), vars = list("EXDOSE"), when = list(EXDOSU = list("mg/m2")))),
-       prepare_pc = setNames(list(), character()))
+       prepare_pc = setNames(list(), character()),
+       lab_release = list(enabled = FALSE, keep_columns = list()))
 }
 
 #' Read a study's settings (blind_options.json)
@@ -240,7 +241,7 @@ ub_read_options <- function(ub_dir) {
 #' @export
 ub_validate_options <- function(opts) {
   p <- character()
-  known <- c(.UB_OPTION_KEYS, "qc_waiver_notes", "prepare_pc")
+  known <- c(.UB_OPTION_KEYS, "qc_waiver_notes", "prepare_pc", "lab_release")
   extra <- setdiff(names(opts), c(known, grep("^_", names(opts), value = TRUE)))
   if (length(extra)) p <- c(p, paste0("unknown setting(s): ", paste(extra, collapse = ", ")))
   w <- unlist(opts$qc_waivers)
@@ -284,8 +285,13 @@ ub_write_options <- function(ub_dir, opts, backup = TRUE) {
 ub_options_for_engine <- function(opts) {
   o <- opts[intersect(names(opts), .UB_OPTION_KEYS)]
   o$qc_waivers <- as.character(unlist(o$qc_waivers))
+  # Workflow 3 (release the lab file blinded): the run also needs the lab file's settings
+  if (.ub_lab_release_on(opts)) { o$lab_release <- opts$lab_release; o$prepare_pc <- opts$prepare_pc }
   o
 }
+
+# is Workflow 3 on (lab_release.enabled)?
+.ub_lab_release_on <- function(opts) isTRUE(as.logical(unlist(opts$lab_release$enabled))[1])
 
 # ---- recent studies (per user, outside any study) ----------------------------------------------
 .ub_recent_file <- function() file.path(tools::R_user_dir("universalblinder", "config"), "recent_studies.json")
@@ -363,6 +369,7 @@ ub_study_status <- function(ub_dir) {
 #' @export
 ub_settings_changes <- function(ub_dir) {
   o <- ub_read_options(ub_dir); d <- ub_default_options()
+  if (is.null(o$lab_release)) o$lab_release <- d$lab_release     # saved before the setting existed: the default
   keys <- function(x) names(x)[!startsWith(names(x), "_")]
   lv <- function(x) unique(unlist(lapply(keys(x), function(k) .ub_setting_leaves(x[[k]], k)), use.names = FALSE))
   lo <- lv(o); ld <- lv(d)

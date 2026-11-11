@@ -23,5 +23,6 @@
     {"datasets": ["EC"], "vars": ["ECDOSE"], "when": {"ECDOSU": ["mg/m2"]}},
     {"datasets": ["EX"], "vars": ["EXDOSE"], "when": {"EXDOSU": ["mg/m2"]}}
   ],
-  "prepare_pc": {}
+  "prepare_pc": {},
+  "lab_release": {"enabled": false, "keep_columns": []}
 }

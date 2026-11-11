@@ -79,7 +79,7 @@ ub_blind_folder <- function(folder, options = list(), steps = NULL, log_file = N
                       blinded_dir = "private/blinded", unblinded_dir = "private/unblinded",
                       qc_dir = "private/qc", log_dir = "private/logs")
 .OPTION_KEYS <- c("dataset_aliases", "identities", "rename_vars", "extra_suppress_vars", "qc_waivers", "drop_vars", "blank_where",
-                  "config", "config_overrides")
+                  "config", "config_overrides", "lab_release", "prepare_pc")
 
 .discover_datasets <- function(input_dir) {
   fs <- sort(list.files(input_dir))
