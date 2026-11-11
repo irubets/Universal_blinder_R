@@ -213,6 +213,85 @@ ub_prepare_pc <- function(folder, settings, write = TRUE, quiet = FALSE) {
   k
 }
 
+# One row per lab row (blank rows dropped), resolved to PC: USUBJID, PCTESTCD, VISIT, T (hours), key, pc_row (the
+# first PC row with that key, NA when none), n_pc (how many PC rows have it), and reason/category/setting for rows
+# that cannot be put into PC (NA when the row resolves). A repeat ("dup") keeps its pc_row: Prepare PC refuses it,
+# the lab release (Workflow 3) releases it. use_specimen: also match on specimen (Workflow 3).
+# Attributes: pc_key (one per PC row), multi.
+.ub_ppc_resolve <- function(lab, pc, s, use_specimen = FALSE) {
+  col <- s$columns
+  multi <- length(s$analytes) > 0
+  pc$USUBJID <- as.character(pc$USUBJID); pc$VISIT <- as.character(pc$VISIT)
+  pcT <- round(suppressWarnings(as.numeric(pc$PCTPTNUM)), 6)
+  pc_visits <- sort(unique(pc$VISIT))
+  used <- col[nzchar(col)]
+  bad <- unname(used[!used %in% names(lab)])
+  if (length(bad))
+    .ub_ppc_stop("These columns are not in ", s$results_file, ": ", .ub_ppc_list(bad), " (setting columns). Its columns are: ",
+                 .ub_ppc_list(names(lab)))
+  r <- as.data.frame(lapply(used, function(v) trimws(as.character(lab[[v]]))), stringsAsFactors = FALSE,
+                     col.names = names(used))
+  r$lab_row <- seq_len(nrow(r)) + 1L
+  keep <- if (length(used)) Reduce(`|`, lapply(names(used), function(k) nzchar(r[[k]]))) else logical(nrow(r))
+  r <- r[keep, , drop = FALSE]
+  rownames(r) <- NULL
+  for (k in setdiff(.UB_PPC_COLUMNS, names(r))) r[[k]] <- rep("", nrow(r))
+
+  # ---- row-level checks (first reason wins, in the order of the stops below) ----
+  reason <- rep(NA_character_, nrow(r)); setting <- reason; cat_ <- reason
+  flag <- function(mask, category, why, what) {
+    m <- is.na(reason) & !is.na(mask) & mask
+    reason[m] <<- why; setting[m] <<- what; cat_[m] <<- category
+  }
+  pc_codes <- if ("PCTESTCD" %in% names(pc)) sort(unique(as.character(pc$PCTESTCD))) else character()
+  if (multi) {
+    if (!"PCTESTCD" %in% names(pc))
+      .ub_ppc_stop("PC has no PCTESTCD, so results of several analytes cannot be matched to it.")
+    r$PCTESTCD <- unname(s$analytes[r$analyte])
+    flag(!r$analyte %in% names(s$analytes), "noa", "analyte not listed in the setting analytes", "analytes")
+    flag(!r$PCTESTCD %in% pc_codes, "nop", "the analyte code given for it in the setting analytes is not in PC.PCTESTCD", "analytes")
+  } else if (nzchar(col[["analyte"]]) && length(unique(r$analyte)) > 1) {
+    .ub_ppc_stop("The results file has several analytes (", .ub_ppc_list(sort(unique(r$analyte))), "). Fill in ",
+                 "the setting analytes (and leave pctestcd/pctest empty).")
+  }
+
+  ids <- unique(pc$USUBJID)
+  us <- unique(r$subject)
+  um <- vapply(us, function(v) {
+    if (v %in% ids) return(v)
+    hit <- ids[endsWith(ids, v)]
+    if (length(hit) == 1) hit else NA_character_
+  }, "", USE.NAMES = FALSE)
+  r$USUBJID <- um[match(r$subject, us)]
+  flag(is.na(r$USUBJID), "subject", "subject not in PC.USUBJID (or it matches several subjects)",
+       "columns: subject (or correct the subject ID in the results file)")
+
+  r$VISIT <- ifelse(r$visit %in% names(s$visit_map), unname(s$visit_map[r$visit]), r$visit)
+  flag(!r$VISIT %in% pc_visits, "visit", "visit not in PC.VISIT", "visit_map")
+
+  r$T <- round(ifelse(r$timepoint_name %in% names(s$time_map), unname(s$time_map[r$timepoint_name]),
+                      suppressWarnings(as.numeric(r$nominal_time))), 6)
+  flag(is.na(r$T), "time", "nominal time is not a number", "columns: nominal_time, or time_map")
+
+  r$key <- .ub_ppc_key(r$USUBJID, r$VISIT, r$T, if (multi) r$PCTESTCD)
+  pc_key <- .ub_ppc_key(pc$USUBJID, pc$VISIT, pcT, if (multi) as.character(pc$PCTESTCD))
+  if (use_specimen && nzchar(col[["specimen"]]) && "PCSPEC" %in% names(pc)) {   # Workflow 3 only
+    r$key <- paste(r$key, toupper(trimws(r$specimen)), sep = "\r")
+    pc_key <- paste(pc_key, toupper(trimws(as.character(pc$PCSPEC))), sep = "\r")
+  }
+  r$n_pc <- as.integer(vapply(r$key, function(k) sum(pc_key == k), 0L, USE.NAMES = FALSE))
+  ok_so_far <- is.na(reason)
+  dk <- r$key[ok_so_far]
+  dupk <- unique(dk[duplicated(dk)])
+  flag(r$key %in% dupk, "dup", "another result has the same subject + visit + nominal time", "time_map")
+  flag(!r$key %in% pc_key, "nopc", "no PC record with this subject, visit and nominal time", "visit_map or time_map")
+  r$pc_row <- match(r$key, pc_key)
+  r$reason <- reason; r$setting <- setting; r$category <- cat_
+  attr(r, "pc_key") <- pc_key
+  attr(r, "multi") <- multi
+  r
+}
+
 .ub_ppc_run <- function(folder, settings, write, say, st) {
   s <- .ub_ppc_settings(settings)
   col <- s$columns
@@ -265,68 +344,20 @@ ub_prepare_pc <- function(folder, settings, write = TRUE, quiet = FALSE) {
   if (!file.exists(res_path)) .ub_ppc_stop(res_path, " not found. Copy the results file into the input folder.")
   lab <- .ub_ppc_read_lab(res_path, s$sheet)
   names(lab) <- trimws(names(lab))
-  used <- col[nzchar(col)]
-  bad <- unname(used[!used %in% names(lab)])
-  if (length(bad))
-    .ub_ppc_stop("These columns are not in ", s$results_file, ": ", .ub_ppc_list(bad), " (setting columns). Its columns are: ",
-                 .ub_ppc_list(names(lab)))
-  r <- as.data.frame(lapply(used, function(v) trimws(as.character(lab[[v]]))), stringsAsFactors = FALSE,
-                     col.names = names(used))
-  r$lab_row <- seq_len(nrow(r)) + 1L
-  keep <- if (length(used)) Reduce(`|`, lapply(names(used), function(k) nzchar(r[[k]]))) else logical(nrow(r))
-  r <- r[keep, , drop = FALSE]
-  rownames(r) <- NULL
-  for (k in setdiff(.UB_PPC_COLUMNS, names(r))) r[[k]] <- rep("", nrow(r))
+  r <- .ub_ppc_resolve(lab, pc, s)
+  pc_key <- attr(r, "pc_key")
   st$res$n_lab <- nrow(r)
   say("Results file: ", nrow(r), " rows.  PC: ", nrow(pc), " records.")
 
-  # ---- row-level checks (first reason wins, in the order of the stops below) ----
-  reason <- rep(NA_character_, nrow(r)); setting <- reason; cat_ <- reason
+  reason <- r$reason; setting <- r$setting; cat_ <- r$category
   flag <- function(mask, category, why, what) {
     m <- is.na(reason) & !is.na(mask) & mask
     reason[m] <<- why; setting[m] <<- what; cat_[m] <<- category
   }
-  pc_codes <- if ("PCTESTCD" %in% names(pc)) sort(unique(as.character(pc$PCTESTCD))) else character()
-  if (multi) {
-    if (!"PCTESTCD" %in% names(pc))
-      .ub_ppc_stop("PC has no PCTESTCD, so results of several analytes cannot be matched to it.")
-    r$PCTESTCD <- unname(s$analytes[r$analyte])
-    flag(!r$analyte %in% names(s$analytes), "noa", "analyte not listed in the setting analytes", "analytes")
-    flag(!r$PCTESTCD %in% pc_codes, "nop", "the analyte code given for it in the setting analytes is not in PC.PCTESTCD", "analytes")
-  } else if (nzchar(col[["analyte"]]) && length(unique(r$analyte)) > 1) {
-    .ub_ppc_stop("The results file has several analytes (", .ub_ppc_list(sort(unique(r$analyte))), "). Fill in ",
-                 "the setting analytes (and leave pctestcd/pctest empty).")
-  }
-
-  ids <- unique(pc$USUBJID)
-  us <- unique(r$subject)
-  um <- vapply(us, function(v) {
-    if (v %in% ids) return(v)
-    hit <- ids[endsWith(ids, v)]
-    if (length(hit) == 1) hit else NA_character_
-  }, "", USE.NAMES = FALSE)
-  r$USUBJID <- um[match(r$subject, us)]
-  flag(is.na(r$USUBJID), "subject", "subject not in PC.USUBJID (or it matches several subjects)",
-       "columns: subject (or correct the subject ID in the results file)")
-
-  r$VISIT <- ifelse(r$visit %in% names(s$visit_map), unname(s$visit_map[r$visit]), r$visit)
-  flag(!r$VISIT %in% pc_visits, "visit", "visit not in PC.VISIT", "visit_map")
-
-  r$T <- round(ifelse(r$timepoint_name %in% names(s$time_map), unname(s$time_map[r$timepoint_name]),
-                      suppressWarnings(as.numeric(r$nominal_time))), 6)
-  flag(is.na(r$T), "time", "nominal time is not a number", "columns: nominal_time, or time_map")
-
-  r$key <- .ub_ppc_key(r$USUBJID, r$VISIT, r$T, if (multi) r$PCTESTCD)
-  pc_key <- .ub_ppc_key(pc$USUBJID, pc$VISIT, pcT, if (multi) as.character(pc$PCTESTCD))
-  ok_so_far <- is.na(reason)
-  dk <- r$key[ok_so_far]
-  dupk <- unique(dk[duplicated(dk)])
-  flag(r$key %in% dupk, "dup", "another result has the same subject + visit + nominal time", "time_map")
   pc_dup <- anyDuplicated(pc_key) > 0
-  flag(!r$key %in% pc_key, "nopc", "no PC record with this subject, visit and nominal time", "visit_map or time_map")
   matched <- is.na(reason)
   st$res$n_matched <- sum(matched)
-  r$pc_row <- ifelse(matched, match(r$key, pc_key), NA_integer_)
+  r$pc_row <- ifelse(matched, r$pc_row, NA_integer_)
   flag(matched & !(.ub_ppc_is_bql(r$result) | .ub_ppc_is_num(r$result)), "result",
        "result is neither a number nor BQL<(x) / BLQ<(x)", "correct the value in the results file")
 

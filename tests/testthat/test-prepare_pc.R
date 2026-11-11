@@ -41,6 +41,29 @@ PPC_SETTINGS <- list(results_file = "lab_results.csv",
 
 ppc_set <- function(...) utils::modifyList(PPC_SETTINGS, list(...))
 
+test_that(".ub_ppc_resolve returns one row per lab row with its PC match", {
+  s <- ppc_study()
+  analytes <- as.list(stats::setNames(s$full$PCTESTCD, s$full$PCTEST)); analytes <- analytes[!duplicated(names(analytes))]
+  lab <- s$lab
+  lab <- rbind(lab, lab[1, ], transform(lab[1, ], Subject = "999-999"))   # a repeat, and a subject not in PC
+  utils::write.csv(lab, file.path(s$folder, "input", "lab_results.csv"), row.names = FALSE)
+  st <- .ub_ppc_settings(ppc_set(visit_map = s$visits, analytes = analytes))
+  rl <- .ub_ppc_read_lab(file.path(s$folder, "input", "lab_results.csv")); names(rl) <- trimws(names(rl))
+  pc <- ub_read_dataset(file.path(s$folder, "input", "pc.xpt"))$data
+  r <- .ub_ppc_resolve(rl, pc, st)
+  expect_equal(nrow(r), nrow(lab))
+  expect_equal(r$lab_row, seq_len(nrow(lab)) + 1L)
+  ok <- is.na(r$reason)
+  expect_true(all(r$n_pc[ok] == 1))
+  expect_true(all(pc$USUBJID[r$pc_row[ok]] == r$USUBJID[ok]))
+  rep_rows <- c(1, nrow(lab) - 1)
+  expect_equal(r$category[rep_rows], c("dup", "dup"))          # Prepare PC refuses repeats ...
+  expect_equal(r$pc_row[rep_rows[1]], r$pc_row[rep_rows[2]])   # ... but both still point to their PC record
+  expect_false(is.na(r$pc_row[rep_rows[1]]))
+  last <- nrow(lab)
+  expect_equal(r$category[last], "subject"); expect_true(is.na(r$pc_row[last]))
+})
+
 test_that("several analytes fill PC; the original PC is kept; the log is written", {
   s <- ppc_study()
   analytes <- as.list(stats::setNames(s$full$PCTESTCD, s$full$PCTEST)); analytes <- analytes[!duplicated(names(analytes))]
