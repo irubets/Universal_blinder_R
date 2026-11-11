@@ -189,27 +189,28 @@ Each one turns the switch on in *Prepare PC* and runs *Check matching*, so you s
 
 **Steps**
 1. **Prepare PC tab, cards 1 and 2:** choose the lab file and its columns, the analytes, and the visit and time translations, as for Workflow 2. Translations are optional: they only raise the number of rows that match.
-2. **Card 4:** tick **"The results can't be merged into PC: release the lab file blinded instead (Workflow 3)"**. Optionally choose **other lab columns to release** (for example a run date or a comment). Dates in them are shifted like PC's dates and drug or analyte names are replaced by their codes. Do not keep identifier columns (accession numbers, barcodes, run IDs): they are not recognised as identifiers. The list marks names that look like one.
+2. **Card 4:** tick **"The results can't be merged into PC: release the lab file blinded instead (Workflow 3)"**. Optionally choose **other lab columns to release** (for example a run date or a comment). Dates in them are shifted like PC's dates and drug or analyte names are replaced by their codes. Dates are read in the usual formats (`2023-03-16`, `16.03.2023`, `16/03/2023`, `2023/03/16`, `16-Mar-2023`, `16-Mar-23`, and Excel dates); a column whose name says it holds dates but whose values can't all be read as dates stops the run, so that no date is released unshifted. A column holding numbers is refused: numbers in kept columns are not blinded. Do not keep identifier columns (accession numbers, barcodes, run IDs): they are not recognised as identifiers. The list marks names that look like one.
 3. Click **Check matching**: it shows how many rows match a PC record, how many don't, and which rows are left out and why. It writes nothing.
 4. **Blind & QC:** run the pre-flight and *Run blinding* as in Workflow 1. The lab file is blinded in the same run as PC, with the same key, and checked by the same QC. The *FINISHED* message adds "Lab file released: N rows, M matched to PC".
 
-**What the recipient gets:** `output\<lab file name>_blinded.csv` (CSV, even when the lab sent Excel), with:
+**What the recipient gets:** `output\lab_results_blinded.csv` (always this name, because the lab file's own name often carries the study code or a date; CSV, even when the lab sent Excel), with:
 
 | Column | Content |
 |---|---|
 | `UBRECID` | the row's own random record identifier (quote it in findings) |
-| `LAB_ROW` | the row's number in the original lab file (header = row 1) |
 | the lab's columns, in its own order and names | subject: the blinded USUBJID (the same as in the blinded PC); analyte: the blinded code (or name); concentration: scaled with the same per-subject factor as PC, same decimals, BLQ/BQL text kept with the blinded LLOQ inside; LLOQ: blinded like PC.PCLLOQ; visit, nominal time, time-point name, specimen, unit: as in the lab file |
 | `PC_UBRECID` | the UBRECID of the PC record the row matches, in the PC released with it; empty when there is none |
 | `MATCH_STATUS` | `matched`, `no PC record at this visit/time`, or `several PC records` |
 
+The rows are sorted by blinded subject. The lab file's row numbers are not released, because the lab file's order (often by real subject) would show through; Retrieve keeps them privately.
+
 **How to merge:** matched rows on `PC_UBRECID` = PC's `UBRECID`. The other rows can be compared on USUBJID, visit, nominal time and analyte. Two lab rows that match the same PC record (for example a repeat analysis) are both released with the same `PC_UBRECID`: the recipient decides which counts.
 
-**Rows left out:** rows whose subject is not in PC (or matches several subjects), and rows whose analyte is not PC's. They are listed with the reason in `private\reports\lab_release_report.html`; fix the subject IDs or the analyte settings and blind again.
+**Rows left out:** rows whose subject is not in PC (or matches several subjects), rows whose analyte is not PC's, and rows whose result contains a number but is neither a plain number nor `BLQ<(x)`/`BQL<(x)` (for example `12.3 ng/mL` or `<0.500`), which would otherwise be released with the real value. They are listed with the reason in `private\reports\lab_release_report.html`; fix the subject IDs or the analyte settings and blind again.
 
-**QC:** every check that runs on PC also runs on the lab file. A column name that contains a drug name fails QC. A **WARN** `lab_match_rate` says that fewer than half of the lab rows matched a PC record: check the visit and time translations.
+**QC:** every check that runs on PC also runs on the lab file. A column name that contains a drug name fails QC, and so does a calendar date in a lab text that is released as it is (visit, time point, specimen, kept text). A **WARN** `lab_match_rate` says that fewer than half of the lab rows matched a PC record: check the visit and time translations.
 
-**Retrieve:** a finding with `DATASET` = the lab file's name (for example `lab_results.csv`, `lab_results` or `lab_results_blinded.csv`) and the `UBRECID` of each row returns the original lab rows. Retrieve refuses if the lab file in `input` changed since the release.
+**Retrieve:** a finding with `DATASET` = the lab file's name or `lab_results_blinded.csv` and the `UBRECID` of each row returns the original lab rows. Retrieve refuses if the lab file in `input` changed since the release.
 
 ## Which datasets can be blinded
 
@@ -437,7 +438,7 @@ Copy the new files into `input` (Study tab) and run the blinding again. The key 
 | `... new row(s) were added to ...\private\codebook.csv` | Expected on the first run and whenever the data brings a new value: review the codebook, confirm the review, and run again. |
 | `The codebook review is not confirmed: ...` (from `blind.R`) | The same check as in the app: answer the codebook rows, then confirm in the app (*I have reviewed the codebook*) or in R: `universalblinder::ub_codebook_confirm_review("<UB folder>", "<your name>")`. Then Source `blind.R` again. A `blind.R` copied by an older version does not check this: replace it with the package's `template_folder/blind.R`. |
 | *Confirm the codebook review first* (Run blinding does not start) | Codebook rows still need an answer, the review was not confirmed, or a code changed after it. Open Codebook review, answer the rows, type your name and click *I have reviewed the codebook*. |
-| `keep_columns: X is not a column of ...` / `is already a role column` | Workflow 3: the extra column to release must be a column of the lab file and not one of the role columns (Prepare PC, card 4). |
+| `keep_columns: X is not a column of ...` / `is already a role column` / `looks like a date column` / `holds numbers` | Workflow 3: an extra column to release must be a lab column that is not a role; a date column must be readable as dates; numbers are not released (Prepare PC, card 4). |
 | `LABPC: the lab file changed since the release` (Retrieve) | The lab file in `input` is not the one that was blinded. Put the original back, or blind again. |
 | QC WARN `lab_match_rate` | Workflow 3: fewer than half of the lab rows matched a PC record. Add visit or time translations in Prepare PC, then *Check matching*. |
 | `... codebook.csv needs an answer -- line N: ...` | A row still has `?`, or a spelling names a code that no drug or analyte has. |

@@ -218,7 +218,8 @@ ub_prepare_pc <- function(folder, settings, write = TRUE, quiet = FALSE) {
 # that cannot be put into PC (NA when the row resolves). A repeat ("dup") keeps its pc_row: Prepare PC refuses it,
 # the lab release (Workflow 3) releases it. use_specimen: also match on specimen (Workflow 3).
 # Attributes: pc_key (one per PC row), multi.
-.ub_ppc_resolve <- function(lab, pc, s, use_specimen = FALSE) {
+# key_analyte: also match on the analyte when there is one code (Workflow 3; PC may hold several analytes)
+.ub_ppc_resolve <- function(lab, pc, s, use_specimen = FALSE, key_analyte = FALSE) {
   col <- s$columns
   multi <- length(s$analytes) > 0
   pc$USUBJID <- as.character(pc$USUBJID); pc$VISIT <- as.character(pc$VISIT)
@@ -273,8 +274,10 @@ ub_prepare_pc <- function(folder, settings, write = TRUE, quiet = FALSE) {
                       suppressWarnings(as.numeric(r$nominal_time))), 6)
   flag(is.na(r$T), "time", "nominal time is not a number", "columns: nominal_time, or time_map")
 
-  r$key <- .ub_ppc_key(r$USUBJID, r$VISIT, r$T, if (multi) r$PCTESTCD)
-  pc_key <- .ub_ppc_key(pc$USUBJID, pc$VISIT, pcT, if (multi) as.character(pc$PCTESTCD))
+  by_analyte <- multi || (key_analyte && "PCTESTCD" %in% names(pc))
+  if (!multi && by_analyte) r$PCTESTCD <- rep(s$pctestcd, nrow(r))
+  r$key <- .ub_ppc_key(r$USUBJID, r$VISIT, r$T, if (by_analyte) r$PCTESTCD)
+  pc_key <- .ub_ppc_key(pc$USUBJID, pc$VISIT, pcT, if (by_analyte) as.character(pc$PCTESTCD))
   if (use_specimen && nzchar(col[["specimen"]]) && "PCSPEC" %in% names(pc)) {   # Workflow 3 only
     r$key <- paste(r$key, toupper(trimws(r$specimen)), sep = "\r")
     pc_key <- paste(pc_key, toupper(trimws(as.character(pc$PCSPEC))), sep = "\r")

@@ -29,7 +29,10 @@
     list(rx = "^\\d{1,2}-\\d{2}-\\d{4}$", fmt = "%d-%m-%Y", out = "%Y-%m-%d"),
     list(rx = "^\\d{2}\\d{2}\\d{4}$", fmt = "%d%m%Y", out = "%Y-%m-%d"),
     list(rx = "^\\d{1,2}/\\d{1,2}/\\d{4}$", fmt = "%d/%m/%Y", out = "%Y-%m-%d"),
-    list(rx = "^\\d{1,2}/\\d{1,2}/\\d{4}$", fmt = "%m/%d/%Y", out = "%Y-%m-%d"))
+    list(rx = "^\\d{1,2}/\\d{1,2}/\\d{4}$", fmt = "%m/%d/%Y", out = "%Y-%m-%d"),
+    list(rx = "^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$", fmt = "%d.%m.%Y", out = "%Y-%m-%d"),
+    list(rx = "^\\d{4}/\\d{1,2}/\\d{1,2}$", fmt = "%Y/%m/%d", out = "%Y-%m-%d"),
+    list(rx = "^\\d{1,2}-\\d{2}-\\d{2}$", fmt = "%d-%m-%y", out = "%Y-%m-%d"))
   for (f in forms) {
     if (!all(grepl(f$rx, w))) next
     p <- as.POSIXct(strptime(w, f$fmt, tz = "UTC"))
@@ -37,8 +40,25 @@
     iso <- v; iso[has] <- format(p, f$out, tz = "UTC")
     return(list(is_date = TRUE, iso = iso))
   }
+  # Excel day numbers (an Excel date cell read as text), only in a column whose name says it holds dates
+  if (.ub_lab_date_name(name) && all(grepl("^\\d{5}(\\.\\d+)?$", w))) {
+    n <- as.numeric(w)
+    if (all(n >= 20000 & n <= 80000)) {
+      p <- as.POSIXct("1899-12-30", tz = "UTC") + round(n * 86400)
+      iso <- v; iso[has] <- format(p, if (any(n %% 1 != 0)) "%Y-%m-%dT%H:%M" else "%Y-%m-%d", tz = "UTC")
+      return(list(is_date = TRUE, iso = iso))
+    }
+  }
   no
 }
+
+# a column name that says it holds dates or times
+.ub_lab_date_name <- function(name) grepl("(DTC|DT|DATE|TIME|DTM)$|DATE", name, ignore.case = TRUE)
+
+# dates the QC date pattern may miss, in lab texts released as they are (dd.mm.yyyy, yyyy/mm/dd, dd-Mon-yy, d/m/yy)
+.UB_LAB_DATE_RX <- paste0("(?i)(?<!\\d)\\d{1,2}\\.\\d{1,2}\\.(19|20)?\\d{2}(?!\\d)|(?<!\\d)(19|20)\\d{2}/\\d{1,2}/\\d{1,2}(?!\\d)|",
+                          "(?<!\\d)\\d{1,2}[ -](JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*[ -]\\d{2,4}(?!\\d)|",
+                          "(?<!\\d)\\d{1,2}/\\d{1,2}/\\d{2}(?!\\d)")
 
 #' Prepare the lab results file for release (Workflow 3), or check how it matches PC
 #'
@@ -85,13 +105,17 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   pc <- ub_read_dataset(file.path(folder, "input", pcn))$data
   for (v in c("USUBJID", "VISIT", "PCTPTNUM", "PCTESTCD"))
     if (!v %in% names(pc)) ub_error("PC has no ", v, "; it is needed to match the lab results.")
-  r <- .ub_lab_wrap(.ub_ppc_resolve(lab, pc, s, use_specimen = TRUE))
+  # match on the analyte too (one analyte code included), so that a row never links to another analyte's PC record
+  r <- .ub_lab_wrap(.ub_ppc_resolve(lab, pc, s, use_specimen = TRUE, key_analyte = TRUE))
   pc_codes <- unique(as.character(pc$PCTESTCD))
   if (!multi) r$PCTESTCD <- rep(s$pctestcd, nrow(r))
 
   # rows that cannot be released: the subject or the analyte is not PC's
   out_reason <- ifelse(r$category %in% c("subject", "noa", "nop"), r$reason, NA_character_)
   out_reason[is.na(out_reason) & !r$PCTESTCD %in% pc_codes] <- "the analyte code is not in PC.PCTESTCD"
+  # a result with a number in it that is neither a plain number nor BLQ<(x): it would be released as it is, real value included
+  odd <- grepl("[0-9]", r$result) & !(.ub_ppc_is_num(r$result) | .ub_ppc_is_bql(r$result))
+  out_reason[is.na(out_reason) & odd] <- "the result is neither a number nor BQL<(x) / BLQ<(x), so it could carry a real value (correct it in the lab file)"
   out <- !is.na(out_reason)
   left_out <- data.frame(lab_row = r$lab_row[out], subject = r$subject[out], analyte = r$analyte[out],
                          reason = out_reason[out], stringsAsFactors = FALSE)
@@ -120,6 +144,13 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   for (i in seq_along(keep)) {
     vals <- as.character(lab[[keep[i]]][rr$lab_row - 1L])
     d <- .ub_lab_dates(vals, keep[i])
+    nonempty <- vals[!is.na(vals) & nzchar(trimws(vals))]
+    if (!d$is_date && .ub_lab_date_name(keep[i]) && length(nonempty))
+      ub_error("keep_columns: ", keep[i], " looks like a date column but its values could not all be read as dates (e.g. ",
+               paste(utils::head(unique(nonempty), 3), collapse = ", "), "). Leave it out: an unread date would be released unshifted.")
+    if (!d$is_date && length(nonempty) && mean(.ub_ppc_is_num(nonempty)) >= 0.5)
+      ub_error("keep_columns: ", keep[i], " holds numbers (e.g. ", paste(utils::head(unique(nonempty), 3), collapse = ", "),
+               "). Numbers in kept columns are not blinded and could reveal real values: leave it out.")
     nm <- sprintf("K%02d%s", i, if (d$is_date) "DTC" else "")
     L[[nm]] <- d$iso
     kept <- rbind(kept, data.frame(lab_name = keep[i], labpc_name = nm, kind = if (d$is_date) "kept_date" else "kept_text",
@@ -163,15 +194,16 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   lay
 }
 
-# private/blinded/<lab file stem>_blinded.csv
-.ub_lab_layout_path <- function(study, lay = .ub_lab_layout_read(study))
-  file.path(study$paths$blinded_dir, paste0(tools::file_path_sans_ext(basename(lay$lab_file)), "_blinded.csv"))
+# the released name is fixed: the lab file's own name often carries the study code or a date
+.UB_LAB_OUT <- "lab_results_blinded.csv"
+.ub_lab_layout_path <- function(study, lay = NULL) file.path(study$paths$blinded_dir, .UB_LAB_OUT)
 
-# The blinded LABPC in the lab's layout: UBRECID, LAB_ROW, the lab's role and kept columns (lab names, lab order),
-# PC_UBRECID (the matched record of the PC released with it; "" when none) and MATCH_STATUS. All columns are text.
+# The blinded LABPC in the lab's layout: UBRECID, the lab's role and kept columns (lab names, lab order), PC_UBRECID
+# (the matched record of the PC released with it; "" when none) and MATCH_STATUS. All columns are text. The lab row
+# number is not released: it would show the lab file's order (often by real subject); Retrieve keeps it privately.
 .ub_lab_layout <- function(bl, pc_xw, lay) {
   chr <- function(x) { x <- as.character(x); x[is.na(x)] <- ""; x }
-  out <- data.frame(UBRECID = chr(bl[[UB_RECID_VAR]]), LAB_ROW = chr(as.integer(bl$LABROW)), stringsAsFactors = FALSE)
+  out <- data.frame(UBRECID = chr(bl[[UB_RECID_VAR]]), stringsAsFactors = FALSE)
   cols <- lay$columns
   for (i in seq_len(nrow(cols))) out[[cols$lab_name[i]]] <- chr(bl[[cols$labpc_name[i]]])
   pr <- suppressWarnings(as.integer(bl$PCSRCROW))
@@ -192,14 +224,14 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   utils::write.csv(out, p, row.names = FALSE, na = "", fileEncoding = "UTF-8")
   list(info = list(layout_file = basename(p), layout_md5 = .ub_md5(p), lab_file = lay$lab_file,
                    sheet = if (is.null(lay$sheet)) NULL else as.character(lay$sheet), lab_md5 = lay$lab_md5),
-       rows = data.frame(UBRECID = out$UBRECID, SRC_ROW = as.integer(out$LAB_ROW), stringsAsFactors = FALSE))
+       rows = data.frame(UBRECID = out$UBRECID, SRC_ROW = as.integer(bl$LABROW), stringsAsFactors = FALSE))
 }
 
 # Retrieve: the original lab rows behind lab-file findings (by UBRECID, any release). Each release keeps
 # crosswalk/<release>/labpc_labrows.csv (UBRECID -> row of the lab file) and the md5 of the lab file it was made from.
 .ub_lab_names <- function(lab_file) {
   stem <- tools::file_path_sans_ext(basename(lab_file))
-  toupper(c("LABPC", basename(lab_file), stem, paste0(stem, "_blinded"), paste0(stem, "_blinded.csv")))
+  toupper(c("LABPC", basename(lab_file), stem, .UB_LAB_OUT, tools::file_path_sans_ext(.UB_LAB_OUT)))
 }
 
 .ub_lab_retrieve <- function(folder, root, findings) {
@@ -242,6 +274,17 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
     if (any(vapply(name_terms, function(x) grepl(x, alnum(c), fixed = TRUE), logical(1))))
       add("FAIL", "identity_in_varname", "LABPC", c, paste0("lab column name ", c, " contains an identity fragment"),
           "a variable name contains an identity fragment")
+  # lab texts released as they are (visit, time, time point, specimen, kept text): dates in formats QC may miss
+  txt <- intersect(c("LVISIT", "LTIME", "LTPT", "LSPEC", lay$columns$labpc_name[lay$columns$kind == "kept_text"]), names(df))
+  for (c in txt) {
+    hit <- grepl(.UB_LAB_DATE_RX, as.character(df[[c]]), perl = TRUE)
+    if (any(hit)) {
+      ln <- lay$columns$lab_name[match(c, lay$columns$labpc_name)]
+      add("FAIL", "free_text_date", "LABPC", if (is.na(ln)) c else ln,
+          sprintf("%d value(s) look like a calendar date, which would be released unshifted", sum(hit)),
+          "a lab column contains calendar dates")
+    }
+  }
   n <- nrow(df); m <- sum(df$MATCHST == .UB_MATCH_STATUS[["matched"]])
   if (n && m / n < 0.5) {
     msg <- sprintf("%d of %d lab rows matched a PC record", m, n)

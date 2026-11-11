@@ -261,10 +261,12 @@ ub_retrieve_folder <- function(folder, findings, options = list(), quiet = FALSE
   out_dir <- file.path(folder, "private", "retrieved")
   # Workflow 3: findings on the released lab file go back to the lab file's own rows
   root <- .ub_crosswalk_root(study)
-  last <- .ub_releases(root)
-  lab_file <- if (length(last)) .read_json(file.path(root, last[1], "crosswalk.json"))$datasets$LABPC$lab_file else NULL
+  # every release that released a lab file (it may be older than the newest release, or have another name)
+  lab_files <- unique(unlist(lapply(.ub_releases(root), function(rid)
+    tryCatch(.read_json(file.path(root, rid, "crosswalk.json"))$datasets$LABPC$lab_file, error = function(e) NULL))))
+  lab_names <- unique(unlist(lapply(lab_files, .ub_lab_names)))
   is_lab <- vapply(fs, function(f) { names(f) <- toupper(names(f))
-    !is.null(lab_file) && "DATASET" %in% names(f) && toupper(trimws(f[["DATASET"]])) %in% .ub_lab_names(lab_file) }, logical(1))
+    length(lab_names) > 0 && "DATASET" %in% names(f) && toupper(trimws(f[["DATASET"]])) %in% lab_names }, logical(1))
   res <- if (any(!is_lab)) ub_retrieve(study, fs[!is_lab], out_dir) else list()
   if (any(!is_lab)) for (nm in names(res)) res[[nm]]$FINDING_NO <- which(!is_lab)[res[[nm]]$FINDING_NO]
   if (any(is_lab)) {

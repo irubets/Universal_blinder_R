@@ -568,9 +568,16 @@ rows that match.</li>
 into PC: release the lab file blinded instead (Workflow 3)&quot;</strong>.
 Optionally choose <strong>other lab columns to release</strong> (for
 example a run date or a comment). Dates in them are shifted like PC&#39;s
-dates and drug or analyte names are replaced by their codes. Do not keep
-identifier columns (accession numbers, barcodes, run IDs): they are not
-recognised as identifiers. The list marks names that look like one.</li>
+dates and drug or analyte names are replaced by their codes. Dates are
+read in the usual formats (<code>2023-03-16</code>,
+<code>16.03.2023</code>, <code>16/03/2023</code>,
+<code>2023/03/16</code>, <code>16-Mar-2023</code>,
+<code>16-Mar-23</code>, and Excel dates); a column whose name says it
+holds dates but whose values can&#39;t all be read as dates stops the run,
+so that no date is released unshifted. A column holding numbers is
+refused: numbers in kept columns are not blinded. Do not keep identifier
+columns (accession numbers, barcodes, run IDs): they are not recognised
+as identifiers. The list marks names that look like one.</li>
 <li>Click <strong>Check matching</strong>: it shows how many rows match
 a PC record, how many don&#39;t, and which rows are left out and why. It
 writes nothing.</li>
@@ -581,8 +588,9 @@ as PC, with the same key, and checked by the same QC. The
 PC&quot;.</li>
 </ol>
 <p><strong>What the recipient gets:</strong>
-<code>output\&lt;lab file name&gt;_blinded.csv</code> (CSV, even when
-the lab sent Excel), with:</p>
+<code>output\lab_results_blinded.csv</code> (always this name, because
+the lab file&#39;s own name often carries the study code or a date; CSV,
+even when the lab sent Excel), with:</p>
 <table>
 <thead>
 <tr>
@@ -594,10 +602,6 @@ the lab sent Excel), with:</p>
 <tr>
 <td><code>UBRECID</code></td>
 <td>the row&#39;s own random record identifier (quote it in findings)</td>
-</tr>
-<tr>
-<td><code>LAB_ROW</code></td>
-<td>the row&#39;s number in the original lab file (header = row 1)</td>
 </tr>
 <tr>
 <td>the lab&#39;s columns, in its own order and names</td>
@@ -619,6 +623,9 @@ or <code>several PC records</code></td>
 </tr>
 </tbody>
 </table>
+<p>The rows are sorted by blinded subject. The lab file&#39;s row numbers
+are not released, because the lab file&#39;s order (often by real subject)
+would show through; Retrieve keeps them privately.</p>
 <p><strong>How to merge:</strong> matched rows on
 <code>PC_UBRECID</code> = PC&#39;s <code>UBRECID</code>. The other rows can
 be compared on USUBJID, visit, nominal time and analyte. Two lab rows
@@ -626,20 +633,23 @@ that match the same PC record (for example a repeat analysis) are both
 released with the same <code>PC_UBRECID</code>: the recipient decides
 which counts.</p>
 <p><strong>Rows left out:</strong> rows whose subject is not in PC (or
-matches several subjects), and rows whose analyte is not PC&#39;s. They are
-listed with the reason in
-<code>private\reports\lab_release_report.html</code>; fix the subject
-IDs or the analyte settings and blind again.</p>
+matches several subjects), rows whose analyte is not PC&#39;s, and rows
+whose result contains a number but is neither a plain number nor
+<code>BLQ&lt;(x)</code>/<code>BQL&lt;(x)</code> (for example
+<code>12.3 ng/mL</code> or <code>&lt;0.500</code>), which would
+otherwise be released with the real value. They are listed with the
+reason in <code>private\reports\lab_release_report.html</code>; fix the
+subject IDs or the analyte settings and blind again.</p>
 <p><strong>QC:</strong> every check that runs on PC also runs on the lab
-file. A column name that contains a drug name fails QC. A
-<strong>WARN</strong> <code>lab_match_rate</code> says that fewer than
-half of the lab rows matched a PC record: check the visit and time
-translations.</p>
+file. A column name that contains a drug name fails QC, and so does a
+calendar date in a lab text that is released as it is (visit, time
+point, specimen, kept text). A <strong>WARN</strong>
+<code>lab_match_rate</code> says that fewer than half of the lab rows
+matched a PC record: check the visit and time translations.</p>
 <p><strong>Retrieve:</strong> a finding with <code>DATASET</code> = the
-lab file&#39;s name (for example <code>lab_results.csv</code>,
-<code>lab_results</code> or <code>lab_results_blinded.csv</code>) and
-the <code>UBRECID</code> of each row returns the original lab rows.
-Retrieve refuses if the lab file in <code>input</code> changed since the
+lab file&#39;s name or <code>lab_results_blinded.csv</code> and the
+<code>UBRECID</code> of each row returns the original lab rows. Retrieve
+refuses if the lab file in <code>input</code> changed since the
 release.</p>
 <h2 id="which-datasets-can-be-blinded">Which datasets can be
 blinded</h2>
@@ -1323,9 +1333,11 @@ your name and click <em>I have reviewed the codebook</em>.</td>
 </tr>
 <tr>
 <td><code>keep_columns: X is not a column of ...</code> /
-<code>is already a role column</code></td>
-<td>Workflow 3: the extra column to release must be a column of the lab
-file and not one of the role columns (Prepare PC, card 4).</td>
+<code>is already a role column</code> /
+<code>looks like a date column</code> / <code>holds numbers</code></td>
+<td>Workflow 3: an extra column to release must be a lab column that is
+not a role; a date column must be readable as dates; numbers are not
+released (Prepare PC, card 4).</td>
 </tr>
 <tr>
 <td><code>LABPC: the lab file changed since the release</code>

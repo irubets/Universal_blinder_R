@@ -85,6 +85,7 @@ mod_prepare_pc_server <- function(id, state) {
     result <- shiny::reactiveVal(NULL)
     msg <- shiny::reactiveVal(NULL)
     match_res <- shiny::reactiveVal(NULL)
+    keep_ready <- shiny::reactiveVal(FALSE)   # the kept-columns picker shows this lab file's columns
 
     pc_status <- shiny::reactive({ state$tick; shiny::req(state$ub_dir); tryCatch(ub_check_pc_results(state$ub_dir), error = function(e) NULL) })
     output$pc_state <- shiny::renderUI({
@@ -134,6 +135,7 @@ mod_prepare_pc_server <- function(id, state) {
       lr <- tryCatch(ub_read_options(state$ub_dir)$lab_release, error = function(e) NULL)
       shiny::updateCheckboxInput(session, "lab_release_on", value = isTRUE(as.logical(unlist(lr$enabled))[1]))
       match_res(NULL)
+      if (!length(lf) || is.null(s$columns)) { keep_ready(FALSE); shiny::updateSelectizeInput(session, "keep_cols", choices = character(), selected = character()) }
     })
 
     read_cols <- function(file, sheet = NULL, preset = NULL) {
@@ -143,6 +145,7 @@ mod_prepare_pc_server <- function(id, state) {
       kept <- tryCatch(unlist(ub_read_options(state$ub_dir)$lab_release$keep_columns), error = function(e) NULL)
       hint <- ifelse(grepl("ID|ACCESSION|BARCODE", h, ignore.case = TRUE), paste0(h, " (an ID? keep only if needed)"), h)
       shiny::updateSelectizeInput(session, "keep_cols", choices = stats::setNames(h, hint), selected = intersect(kept, h))
+      keep_ready(length(h) > 0)
       guess <- function(role) {
         if (!is.null(preset[[role]])) return(preset[[role]])
         pat <- c(subject = "SUBJ|USUBJID|PATIENT", visit = "VISIT", nominal_time = "NOMINAL|HOUR|NOM",
@@ -201,7 +204,8 @@ mod_prepare_pc_server <- function(id, state) {
     shiny::observeEvent(list(input$lab_release_on, input$keep_cols), {
       shiny::req(state$ub_dir, !is.null(input$lab_release_on))
       o <- ub_read_options(state$ub_dir)
-      keep <- if (is.null(input$keep_cols)) unlist(o$lab_release$keep_columns) else input$keep_cols
+      # an empty picker means "none" once it shows the lab file's columns (before that, keep what is saved)
+      keep <- if (keep_ready()) as.character(input$keep_cols) else if (is.null(input$keep_cols)) unlist(o$lab_release$keep_columns) else input$keep_cols
       new <- list(enabled = isTRUE(input$lab_release_on), keep_columns = as.list(as.character(keep)))
       if (identical(.ub_lab_release_on(o), new$enabled) && setequal(unlist(o$lab_release$keep_columns), unlist(new$keep_columns))) return()
       o$lab_release <- new; ub_write_options(state$ub_dir, o)

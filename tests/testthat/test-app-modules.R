@@ -443,3 +443,15 @@ test_that("Pre-flight: a row proposes Workflow 3 only while it is off, and Apply
   a <- ub_preflight_apply(s$ub, r$suggestion[i])
   expect_equal(a$applied, 0); expect_length(a$choose, 1)
 })
+
+test_that("Prepare PC tab: clearing the last kept lab column is saved", {
+  s <- make_lab_study()
+  st <- app_state(s$ub)
+  shiny::testServer(mod_prepare_pc_server, args = list(state = st), {
+    session$flushReact()
+    lab_inputs(session, on = TRUE)
+    expect_length(unlist(ub_read_options(s$ub)$lab_release$keep_columns), 2)
+    session$setInputs(keep_cols = NULL)                                   # what the browser sends for an emptied picker
+    expect_length(unlist(ub_read_options(s$ub)$lab_release$keep_columns), 0)
+  })
+})
