@@ -1,0 +1,25 @@
+# Study folders and anything that can hold real data or keys: never publish
+UB_*/
+input/
+output/
+private/
+!inst/template_folder/input/
+/Examples/
+findings.csv
+*.sas7bdat
+*.xpt
+!inst/examples/**/*.xpt
+!tests/testthat/fixture*/**/*.xpt
+*.log
+*HANDOVER*.md
+
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+*.Rcheck/
+universalblinder_*.tar.gz
+
+# Design notes (local only)
+docs/superpowers/

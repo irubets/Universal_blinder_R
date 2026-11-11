@@ -1,0 +1,27 @@
+{
+  "_help": "Settings of this study for the Universal Blinder. Edit them in the app (tab 'Study settings'), or here with care. See USERGUIDE.md, 'Study settings'.",
+  "dataset_aliases": {},
+  "identities": {
+    "treatment_aliases": {},
+    "analyte_aliases": {},
+    "analyte_code_aliases": {},
+    "private_terms": []
+  },
+  "rename_vars": {},
+  "extra_suppress_vars": {},
+  "qc_waivers": [],
+  "qc_waiver_notes": {},
+  "config_overrides": {
+    "datasets": {
+      "ADNCA": {"exact_vars": {"PCTESTCD": "analyte_code", "PCTEST": "analyte_name"}},
+      "ADPC": {"exact_vars": {"PCTESTCD": "analyte_code", "PCTEST": "analyte_name"}}
+    }
+  },
+  "drop_vars": {},
+  "blank_where": [
+    {"datasets": ["AD*"], "vars": ["DOSEP"], "when": {"DOSEPU": ["mg/m2"]}},
+    {"datasets": ["EC"], "vars": ["ECDOSE"], "when": {"ECDOSU": ["mg/m2"]}},
+    {"datasets": ["EX"], "vars": ["EXDOSE"], "when": {"EXDOSU": ["mg/m2"]}}
+  ],
+  "prepare_pc": {}
+}

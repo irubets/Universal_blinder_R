@@ -1,0 +1,42 @@
+Package: universalblinder
+Type: Package
+Title: Reversible, Disclosure-Checked Blinding of SDTM/ADaM PK Datasets, with a Shiny App
+Version: 3.0.0
+Authors@R: person("Igor", "Rubets", role = c("aut", "cre"), email = "igor.rubets@gmail.com")
+Description: Produces de-identified ("blinded") copies of clinical
+    pharmacokinetic SDTM/ADaM datasets that keep working in the same
+    downstream programs: pseudonymised subject, site, treatment and analyte
+    identities; per-subject covariate and per-subject-per-analyte
+    concentration rescaling that preserves profile shape; per-subject date
+    shifting; suppression of free text; and disclosure QC that tries the
+    known attacks on its own output. A private key allows authorised
+    reverse-blinding and retrieval of the original records behind review
+    findings. A local Shiny app guides the user through study setup,
+    merging separately delivered bioanalytical results into PC, codebook
+    review, blinding, QC and retrieval, and connects to Claude or a local
+    language model under a strict data gate.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Imports:
+    bslib,
+    commonmark,
+    DT,
+    haven (>= 2.4),
+    httr2,
+    jsonlite,
+    openxlsx,
+    readxl,
+    shiny,
+    shinyFiles,
+    stats,
+    tools,
+    utils
+Suggests:
+    httpuv,
+    openssl,
+    rstudioapi,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

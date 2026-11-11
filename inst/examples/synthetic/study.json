@@ -1,0 +1,64 @@
+{
+  "_comment": "Example PRIVATE study file for the SYNTHETIC study shipped with the package. For a real study keep the study file, the key (maps) and all source/unblinded data OUTSIDE any shared repository.",
+  "study_label": "Synthetic example",
+  "config": null,
+  "paths": {
+    "source_dir": "source",
+    "maps_dir": "private/maps",
+    "blinded_dir": "blinded",
+    "unblinded_dir": "private/unblinded",
+    "qc_dir": "private/qc",
+    "release_dir": "release",
+    "log_dir": "logs"
+  },
+  "datasets": {
+    "ADSL": "adsl.xpt",
+    "EX": "ex.xpt",
+    "EC": "ec.xpt",
+    "PC": "pc.xpt",
+    "ADEX": "adex.xpt",
+    "ADNCA": "adnca.xpt"
+  },
+  "output_format": "xpt",
+  "identities": {
+    "treatment_aliases": {
+      "FICTINIB": [
+        "FCT"
+      ],
+      "SYNTHAZOLE": [
+        "SYZ"
+      ]
+    },
+    "analyte_aliases": {
+      "SYNZM1": [
+        "SZ-M1"
+      ]
+    },
+    "analyte_code_aliases": {},
+    "private_terms": []
+  },
+  "rename_vars": {
+    "ADSL": {
+      "FCTFL": "TRTFL01",
+      "SYZFL": "TRTFL02"
+    },
+    "ADEX": {
+      "DOSEFCT": "DOSET01",
+      "DOSESYZ": "DOSET02"
+    }
+  },
+  "extra_suppress_vars": {},
+  "qc_waivers": [],
+  "seed": null,
+  "allow_seeded_maps": false,
+  "batch": {
+    "steps": [
+      "build_maps",
+      "blind",
+      "qc",
+      "unblind",
+      "verify",
+      "release"
+    ]
+  }
+}

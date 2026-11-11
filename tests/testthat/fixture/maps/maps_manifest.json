@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "builder": "universal_blinder (python) 2.0.0",
+  "updated_utc": "2026-09-27T20:13:36+00:00",
+  "multiplier_range": [
+    0.8,
+    1.2
+  ],
+  "date_shift_days": [
+    30,
+    365
+  ],
+  "seeded": true,
+  "weak_entropy": false,
+  "created_utc": "2026-09-27T20:13:36+00:00",
+  "synthetic_fixture": true
+}

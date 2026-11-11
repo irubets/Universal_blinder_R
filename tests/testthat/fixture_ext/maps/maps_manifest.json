@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "builder": "universal_blinder (python) 2.0.0",
+  "updated_utc": "2026-09-28T21:11:33+00:00",
+  "multiplier_range": [
+    0.8,
+    1.2
+  ],
+  "date_shift_days": [
+    30,
+    365
+  ],
+  "seeded": true,
+  "weak_entropy": false,
+  "studyid_orig": {
+    "ADSL": "SYN-PK-001",
+    "EX": "SYN-PK-001",
+    "EC": "SYN-PK-001",
+    "PC": "SYN-PK-001",
+    "ADEX": "SYN-PK-001",
+    "ADNCA": "SYN-PK-001",
+    "DM": "SYN-PK-001",
+    "VS": "SYN-PK-001",
+    "PP": "SYN-PK-001-A1",
+    "ADPP": "SYN-PK-001-A1",
+    "ADPD": "SYN-PK-001-A1",
+    "SUPPPC": "SYN-PK-001"
+  },
+  "created_utc": "2026-09-28T21:11:33+00:00",
+  "synthetic_fixture": true
+}

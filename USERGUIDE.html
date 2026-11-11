@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10.2" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Universal Blinder: user guide</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">
+:root { --fg: #212529; --muted: #6c757d; --bg: #ffffff; --line: #dee2e6; --code-bg: #f3f4f6; --link: #0b5ed7; --head-bg: #e7f1ff; }
+html { background: var(--bg); }
+body { color: var(--fg); background: var(--bg); max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px;
+font: 16px/1.55 "Segoe UI", Helvetica, Arial, sans-serif; }
+h1 { font-size: 2em; border-bottom: 2px solid var(--line); padding-bottom: .3em; }
+h2 { font-size: 1.5em; margin-top: 2em; border-bottom: 1px solid var(--line); padding-bottom: .25em; }
+h3 { font-size: 1.2em; margin-top: 1.6em; }
+a { color: var(--link); }
+code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; font-size: .92em; }
+pre { background: var(--code-bg); padding: 12px 14px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; margin: 1em 0; width: 100%; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--head-bg); }
+img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
+hr { border: 0; border-top: 1px solid var(--line); }
+@media print { body { max-width: none; } h2 { page-break-before: auto; } }
+</style>
+</head>
+<body>
+<h1 id="universal-blinder-user-guide">Universal Blinder: user guide</h1>
+<p>Universal Blinder makes <strong>blinded copies of pharmacokinetic
+(PK) datasets</strong> (SDTM and ADaM, e.g. PC, EX, ADSL, ADNCA/ADPC,
+ADPP) that you can send to a CRO, a vendor, another team or a review
+tool. The copies keep their structure, so NCA and review programs still
+run on them. Subjects, sites, treatment and analyte names, dates,
+covariates and concentrations are disguised in a consistent way across
+all datasets of a study. A private <strong>key</strong>, which never
+leaves your computer, maps every finding back to the original
+records.</p>
+<p>Everything is done in the <strong>app</strong>. You do not need to
+write or edit code.</p>
+<h2 id="contents">Contents</h2>
+<ol type="1">
+<li><a href="#install-and-start">Install and start</a></li>
+<li><a href="#the-app-at-a-glance">The app at a glance</a></li>
+<li><a href="#the-workflow-at-a-glance">The workflow at a
+glance</a></li>
+<li><a href="#workflow-1-pc-has-its-results">Workflow 1: PC has its
+results</a></li>
+<li><a href="#workflow-2-pc-without-results-results-in-a-separate-file">Workflow
+2: PC without results, results in a separate file</a></li>
+<li><a href="#which-datasets-can-be-blinded">Which datasets can be
+blinded</a></li>
+<li><a href="#the-codebook-every-replaced-value-and-its-code">The
+codebook</a></li>
+<li><a href="#the-study-folder-what-you-may-share-and-what-never">The
+study folder: what you may share, and what never</a></li>
+<li><a href="#what-the-run-does">What the run does</a></li>
+<li><a href="#study-settings">Study settings</a></li>
+<li><a href="#when-qc-reports-warn-or-fail">When QC reports WARN or
+FAIL</a></li>
+<li><a href="#reviewing-the-blinded-data-and-getting-the-original-records-back">Reviewing
+the blinded data and getting the original records back</a></li>
+<li><a href="#the-ai-assistant">The AI assistant</a></li>
+<li><a href="#start-a-study-again-from-scratch">Start a study again from
+scratch</a></li>
+<li><a href="#new-data-for-the-same-study">New data for the same
+study</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="install-and-start">Install and start</h2>
+<ol type="1">
+<li><strong>R 4.1 or later</strong> (and RStudio, if you like).</li>
+<li><strong>Install the package once.</strong> In R:
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;haven&quot;</span>, <span class="st">&quot;jsonlite&quot;</span>, <span class="st">&quot;shiny&quot;</span>, <span class="st">&quot;bslib&quot;</span>, <span class="st">&quot;shinyFiles&quot;</span>, <span class="st">&quot;DT&quot;</span>, <span class="st">&quot;httr2&quot;</span>, <span class="st">&quot;readxl&quot;</span>, <span class="st">&quot;openxlsx&quot;</span>, <span class="st">&quot;commonmark&quot;</span>, <span class="st">&quot;remotes&quot;</span>))</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;irubets/Universal_blinder_R&quot;</span>)</span></code></pre></div>
+(or, from a downloaded copy:
+<code>install.packages(&quot;C:/tools/Universal_blinder_R&quot;, repos = NULL, type = &quot;source&quot;)</code>).</li>
+<li><strong>Start the app:</strong> in R,
+<code>universalblinder::run_app()</code>, or double-click
+<code>run_app.bat</code> in the package folder. The app opens in your
+web browser at <code>http://127.0.0.1:3838</code> (always the same
+address, so you can bookmark it; if that port is taken, for example
+because the app is already open in another R session, a free port is
+used and R shows the address). It runs on your computer only.
+<code>run_app.bat</code> uses the newest R in
+<code>C:\Program Files\R</code>, so install the package (step 2) in that
+R; keep its black window open while you use the app, and close it to
+stop the app.</li>
+</ol>
+<h2 id="the-app-at-a-glance">The app at a glance</h2>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What you do there</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Workflow</strong></td>
+<td>See which steps are done for the selected study, and jump to the
+next one</td>
+</tr>
+<tr>
+<td><strong>Study</strong></td>
+<td>Choose the study folder (folder tree, or paste its path, with or
+without quotes); create its <code>UB_&lt;StudyNumber&gt;</code> folder;
+copy the datasets to blind into <code>input</code></td>
+</tr>
+<tr>
+<td><strong>Prepare PC</strong></td>
+<td>Workflow 2 only: put the lab&#39;s results into PC</td>
+</tr>
+<tr>
+<td><strong>Study settings</strong></td>
+<td>Settings a study rarely needs (aliases, variables to leave out, QC
+waivers, ...)</td>
+</tr>
+<tr>
+<td><strong>Codebook review</strong></td>
+<td>Check the codes that replace drug, analyte, arm and cohort
+names</td>
+</tr>
+<tr>
+<td><strong>Blind &amp; QC</strong></td>
+<td>Pre-flight check, run the blinding, read the QC result</td>
+</tr>
+<tr>
+<td><strong>Retrieve</strong></td>
+<td>Get the original records behind a reviewer&#39;s findings</td>
+</tr>
+<tr>
+<td><strong>AI assistant</strong></td>
+<td>Ask Claude or a local model about the workflow, QC findings,
+settings, the codebook, or the blinded data</td>
+</tr>
+<tr>
+<td><strong>Setup / About</strong></td>
+<td>Installation check</td>
+</tr>
+</tbody>
+</table>
+<p>Colours mean the same in every table and report: <strong>red</strong>
+= must fix, <strong>amber</strong> = needs your decision or attention,
+no colour = OK.</p>
+<h2 id="the-workflow-at-a-glance">The workflow at a glance</h2>
+<p><img role="img" aria-label="The Universal Blinder workflow: Study, Pre-flight loop, Run blinding with the codebook loop and the fix loop, QC result, share, retrieve" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5MDAgMTAxMCIgd2lkdGg9IjkwMCIgaGVpZ2h0PSIxMDEwIiBmb250LWZhbWlseT0iU2Vnb2UgVUksIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiPgogIDx0aXRsZT5Vbml2ZXJzYWwgQmxpbmRlciB3b3JrZmxvdzwvdGl0bGU+CiAgPGRlc2M+U3R1ZHkgdGFiLCB0aGVuIChXb3JrZmxvdyAyIG9ubHkpIFByZXBhcmUgUEMsIHRoZW4gQmxpbmQgYW5kIFFDOiAxLiBQcmUtZmxpZ2h0IHVudGlsIG5vdGhpbmcgaXMgbGVmdCB0byBkZWNpZGUsIDIuIFJ1biBibGluZGluZyB3aXRoIHRoZSBjb2RlYm9vayByZXZpZXcgbG9vcCBhbmQgdGhlIGZpeCBsb29wIHdoZW4gbm90aGluZyBpcyByZWxlYXNlZCwgMy4gUUMgcmVzdWx0LCBzaGFyZSBvdXRwdXQsIFJldHJpZXZlLjwvZGVzYz4KICA8ZGVmcz4KICAgIDxtYXJrZXIgaWQ9ImFyciIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI5IiByZWZZPSI1IiBtYXJrZXJXaWR0aD0iOCIgbWFya2VySGVpZ2h0PSI4IiBvcmllbnQ9ImF1dG8tc3RhcnQtcmV2ZXJzZSI+CiAgICAgIDxwYXRoIGQ9Ik0wLDAgTDEwLDUgTDAsMTAgeiIgZmlsbD0iIzQ0NCIvPgogICAgPC9tYXJrZXI+CiAgICA8c3R5bGU+CiAgICAgIC50YWIgIHsgZmlsbDogI2U3ZjFmZjsgc3Ryb2tlOiAjMGQ2ZWZkOyBzdHJva2Utd2lkdGg6IDEuNTsgfQogICAgICAuZGVjICB7IGZpbGw6ICNmZmY4ZTE7IHN0cm9rZTogI2I1ODkwMDsgc3Ryb2tlLXdpZHRoOiAxLjU7IH0KICAgICAgLmxvb3AgeyBmaWxsOiAjZmZmM2NkOyBzdHJva2U6ICNkMzllMDA7IHN0cm9rZS13aWR0aDogMS41OyB9CiAgICAgIC5mYWlsIHsgZmlsbDogI2Y4ZDdkYTsgc3Ryb2tlOiAjYjAyYTM3OyBzdHJva2Utd2lkdGg6IDEuNTsgfQogICAgICAub2sgICB7IGZpbGw6ICNkMWU3ZGQ7IHN0cm9rZTogIzE5ODc1NDsgc3Ryb2tlLXdpZHRoOiAxLjU7IH0KICAgICAgLmxpbmUgeyBzdHJva2U6ICM0NDQ7IHN0cm9rZS13aWR0aDogMS41OyBmaWxsOiBub25lOyBtYXJrZXItZW5kOiB1cmwoI2Fycik7IH0KICAgICAgLnQgICAgeyBmaWxsOiAjMjEyNTI5OyB0ZXh0LWFuY2hvcjogbWlkZGxlOyB9CiAgICAgIC5iICAgIHsgZm9udC13ZWlnaHQ6IDcwMDsgfQogICAgICAubGFiICB7IGZpbGw6ICM0OTUwNTc7IGZvbnQtc2l6ZTogMTJweDsgZm9udC1zdHlsZTogaXRhbGljOyB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iOTAwIiBoZWlnaHQ9IjEwMTAiIGZpbGw9IiNmZmZmZmYiLz4KCiAgPCEtLSAxIFN0dWR5IC0tPgogIDxyZWN0IGNsYXNzPSJ0YWIiIHg9IjMwMCIgeT0iMjAiIHdpZHRoPSIzMjAiIGhlaWdodD0iNjQiIHJ4PSI4Ii8+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iNDQiPjx0c3BhbiBjbGFzcz0iYiI+U3R1ZHkgdGFiPC90c3Bhbj48L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iNjIiPmNob29zZSB0aGUgc3R1ZHkgZm9sZGVyLCBjcmVhdGUgVUJfJmx0O1N0dWR5Jmd0Oyw8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iNzgiPmNvcHkgdGhlIGRhdGFzZXRzIGludG8gaW5wdXQ8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00NjAsODQgTDQ2MCwxMTIiLz4KCiAgPCEtLSBEMSBQQyBoYXMgcmVzdWx0cz8gLS0+CiAgPHBvbHlnb24gY2xhc3M9ImRlYyIgcG9pbnRzPSI0NjAsMTE0IDYwMCwxNTQgNDYwLDE5NCAzMjAsMTU0Ii8+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iMTUwIj5Eb2VzIFBDIGhhdmUgaXRzPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjE2NiI+Y29uY2VudHJhdGlvbnM/PC90ZXh0PgogIDxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNNjAwLDE1NCBMNjU4LDE1NCIvPgogIDx0ZXh0IGNsYXNzPSJsYWIiIHg9IjYwNiIgeT0iMTQ2Ij5ubzwvdGV4dD4KICA8cmVjdCBjbGFzcz0idGFiIiB4PSI2NjAiIHk9IjEyMiIgd2lkdGg9IjIyMCIgaGVpZ2h0PSI2NCIgcng9IjgiLz4KICA8dGV4dCBjbGFzcz0idCIgeD0iNzcwIiB5PSIxNDYiPjx0c3BhbiBjbGFzcz0iYiI+UHJlcGFyZSBQQzwvdHNwYW4+IChXb3JrZmxvdyAyKTwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iNzcwIiB5PSIxNjQiPnB1dCB0aGUgbGFiJ3MgcmVzdWx0cyBpbnRvIFBDPC90ZXh0PgogIDxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNNzcwLDE4NiBMNzcwLDI2MiBMNjIyLDI2MiIvPgogIDxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNNDYwLDE5NCBMNDYwLDIzMiIvPgogIDx0ZXh0IGNsYXNzPSJsYWIiIHg9IjQ2OCIgeT0iMjE4Ij55ZXM6IFdvcmtmbG93IDE8L3RleHQ+CgogIDwhLS0gMiBQcmUtZmxpZ2h0IC0tPgogIDxyZWN0IGNsYXNzPSJ0YWIiIHg9IjMwMCIgeT0iMjM0IiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjU2IiByeD0iOCIvPgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjI1NyI+PHRzcGFuIGNsYXNzPSJiIj5CbGluZCAmYW1wOyBRQyDihpIgMS4gUHJlLWZsaWdodDwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjI3NSI+Y2xpY2sgUnVuIHByZS1mbGlnaHQ8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00NjAsMjkwIEw0NjAsMzIyIi8+CgogIDwhLS0gRDIgcm93cyBsZWZ0PyAtLT4KICA8cG9seWdvbiBjbGFzcz0iZGVjIiBwb2ludHM9IjQ2MCwzMjQgNjAwLDM2OCA0NjAsNDEyIDMyMCwzNjgiLz4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSIzNjQiPlJvd3MgeW91IHN0aWxsPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjM4MCI+d2FudCB0byBjaGFuZ2U/PC90ZXh0PgogIDxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNNjAwLDM2OCBMNjU4LDM2OCIvPgogIDx0ZXh0IGNsYXNzPSJsYWIiIHg9IjYwNiIgeT0iMzYwIj55ZXM8L3RleHQ+CiAgPHJlY3QgY2xhc3M9Imxvb3AiIHg9IjY2MCIgeT0iMzMwIiB3aWR0aD0iMjIwIiBoZWlnaHQ9Ijc2IiByeD0iOCIvPgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI3NzAiIHk9IjM1MiI+aGlnaGxpZ2h0IHRoZSByb3dzIHlvdSBhY2NlcHQsPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI3NzAiIHk9IjM3MCI+Y2xpY2sgPHRzcGFuIGNsYXNzPSJiIj5BcHBseSBzdWdnZXN0aW9uczwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI3NzAiIHk9IjM4OCI+KG9yIGRlY2lkZSBpbiBTdHVkeSBzZXR0aW5ncyk8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik04NTAsMzMwIEw4NTAsMjgyIEw2MjIsMjgyIi8+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iNzAwIiB5PSIzMDAiPnJ1biB0aGUgcHJlLWZsaWdodCBhZ2FpbjwvdGV4dD4KICA8cGF0aCBjbGFzcz0ibGluZSIgZD0iTTQ2MCw0MTIgTDQ2MCw0NzAiLz4KICA8dGV4dCBjbGFzcz0ibGFiIiB4PSI0NTIiIHk9IjQzMiIgdGV4dC1hbmNob3I9ImVuZCI+bm86IHRoZSB0YWJsZSBpcyBlbXB0eSw8L3RleHQ+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iNDUyIiB5PSI0NDgiIHRleHQtYW5jaG9yPSJlbmQiPm9yIHdoYXQgaXMgbGVmdCBzdGF5cyBieSB5b3VyIGNob2ljZTwvdGV4dD4KCiAgPCEtLSAzIFJ1biBibGluZGluZyAtLT4KICA8cmVjdCBjbGFzcz0idGFiIiB4PSIzMDAiIHk9IjQ3MiIgd2lkdGg9IjMyMCIgaGVpZ2h0PSI1NiIgcng9IjgiLz4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSI0OTUiPjx0c3BhbiBjbGFzcz0iYiI+Mi4gUnVuIGJsaW5kaW5nPC90c3Bhbj48L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iNTEzIj5jbGljayBSdW4gYmxpbmRpbmc8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00NjAsNTI4IEw0NjAsNTYwIi8+CgogIDwhLS0gRDMgcmVzdWx0IC0tPgogIDxwb2x5Z29uIGNsYXNzPSJkZWMiIHBvaW50cz0iNDYwLDU2MiA1NzAsNjEyIDQ2MCw2NjIgMzUwLDYxMiIvPgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjYwOCI+V2hhdCBkb2VzPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9IjYyNCI+dGhlIHJ1biBzYXk/PC90ZXh0PgoKICA8IS0tIGxlZnQ6IGNvZGVib29rIGxvb3AgLS0+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik0zNTAsNjEyIEwyMzIsNjEyIi8+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iMjkxIiB5PSI2MDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnN0b3BzOiBuZXc8L3RleHQ+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iMjkxIiB5PSI2MzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmNvZGVib29rIHJvd3M8L3RleHQ+CiAgPHJlY3QgY2xhc3M9Imxvb3AiIHg9IjEwIiB5PSI1NjIiIHdpZHRoPSIyMjAiIGhlaWdodD0iMTEyIiByeD0iOCIvPgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSIxMjAiIHk9IjU4NCI+PHRzcGFuIGNsYXNzPSJiIj5Db2RlYm9vayByZXZpZXc8L3RzcGFuPjwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iMTIwIiB5PSI2MDIiPihhbHdheXMgYWZ0ZXIgdGhlIGZpcnN0IHJ1bik8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9IjEyMCIgeT0iNjIwIj5hbnN3ZXIgcmVkIGFuZCBhbWJlciByb3dzLDwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iMTIwIiB5PSI2MzgiPk1hcmsgYXMgZGVjaWRlZCAvIFNhdmUgY29kZWJvb2ssPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSIxMjAiIHk9IjY1NiI+PHRzcGFuIGNsYXNzPSJiIj5JIGhhdmUgcmV2aWV3ZWQgdGhlIGNvZGVib29rPC90c3Bhbj48L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik0xMjAsNTYyIEwxMjAsNTAwIEwyOTgsNTAwIi8+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iMTMwIiB5PSI0OTAiPlJ1biBibGluZGluZyBhZ2FpbjwvdGV4dD4KCiAgPCEtLSByaWdodDogbm90aGluZyByZWxlYXNlZCAtLT4KICA8cGF0aCBjbGFzcz0ibGluZSIgZD0iTTU3MCw2MTIgTDY3OCw2MTIiLz4KICA8dGV4dCBjbGFzcz0ibGFiIiB4PSI2MjQiIHk9IjYwNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tk9USElORyBXQVM8L3RleHQ+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iNjI0IiB5PSI2MzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlJFTEVBU0VEPC90ZXh0PgogIDxyZWN0IGNsYXNzPSJmYWlsIiB4PSI2ODAiIHk9IjU1NiIgd2lkdGg9IjIxMCIgaGVpZ2h0PSIxMjQiIHJ4PSI4Ii8+CiAgPHRleHQgY2xhc3M9InQiIHg9Ijc4NSIgeT0iNTc4Ij48dHNwYW4gY2xhc3M9ImIiPlJlYWQgd2h5PC90c3Bhbj4gKHJlZCBib3g6IHRoZTwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iNzg1IiB5PSI1OTYiPmZhaWxlZCBRQyBjaGVja3MsIG9yIHRoZSBlcnJvcik8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9Ijc4NSIgeT0iNjE2Ij5maXggd2l0aCBQcmUtZmxpZ2h0IEFwcGx5LDwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iNzg1IiB5PSI2MzQiPlN0dWR5IHNldHRpbmdzLCB0aGUgY29kZWJvb2ssPC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI3ODUiIHk9IjY1MiI+b3IgYSByZXZpZXdlZCBRQyB3YWl2ZXI7PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI3ODUiIHk9IjY3MCI+QXNrIHRoZSBBSSB3aHksIGlmIHVuY2xlYXI8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik03ODUsNTU2IEw3ODUsNTAwIEw2MjIsNTAwIi8+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iNjQwIiB5PSI0OTAiPlJ1biBibGluZGluZyBhZ2FpbjwvdGV4dD4KCiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00NjAsNjYyIEw0NjAsNzIwIi8+CiAgPHRleHQgY2xhc3M9ImxhYiIgeD0iNDY4IiB5PSI2OTYiPkZJTklTSEVEOiBRQyBQQVNTIG9yIFdBUk48L3RleHQ+CgogIDwhLS0gNCBRQyByZXN1bHQgLS0+CiAgPHJlY3QgY2xhc3M9InRhYiIgeD0iMzAwIiB5PSI3MjIiIHdpZHRoPSIzMjAiIGhlaWdodD0iNTYiIHJ4PSI4Ii8+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iNzQ1Ij48dHNwYW4gY2xhc3M9ImIiPjMuIFFDIHJlc3VsdDwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IGNsYXNzPSJ0IiB4PSI0NjAiIHk9Ijc2MyI+cmVhZCBxY19zdW1tYXJ5Lm1kOyBqdWRnZSBldmVyeSBXQVJOPC90ZXh0PgogIDxwYXRoIGNsYXNzPSJsaW5lIiBkPSJNNDYwLDc3OCBMNDYwLDgwOCIvPgoKICA8IS0tIDUgc2hhcmUgLS0+CiAgPHJlY3QgY2xhc3M9Im9rIiB4PSIzMDAiIHk9IjgxMCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSI1NiIgcng9IjgiLz4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSI4MzMiPjx0c3BhbiBjbGFzcz0iYiI+U2hhcmUgb25seSBvdXRwdXQ8L3RzcGFuPjwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSI4NTEiPm5ldmVyIGlucHV0IG9yIHByaXZhdGU8L3RleHQ+CiAgPHBhdGggY2xhc3M9ImxpbmUiIGQ9Ik00NjAsODY2IEw0NjAsODk2Ii8+CgogIDwhLS0gNiByZXRyaWV2ZSAtLT4KICA8cmVjdCBjbGFzcz0idGFiIiB4PSIzMDAiIHk9Ijg5OCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSI2NCIgcng9IjgiLz4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSI5MjIiPjx0c3BhbiBjbGFzcz0iYiI+UmV0cmlldmU8L3RzcGFuPiAoYWZ0ZXIgdGhlIHJldmlldyk8L3RleHQ+CiAgPHRleHQgY2xhc3M9InQiIHg9IjQ2MCIgeT0iOTQwIj5tYXAgdGhlIHJldmlld2VyJ3MgZmluZGluZ3MgYmFjazwvdGV4dD4KICA8dGV4dCBjbGFzcz0idCIgeD0iNDYwIiB5PSI5NTYiPnRvIHRoZSBvcmlnaW5hbCByZWNvcmRzPC90ZXh0PgoKICA8IS0tIGxlZ2VuZCAtLT4KICA8cmVjdCBjbGFzcz0idGFiIiB4PSIyMCIgeT0iOTc1IiB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHJ4PSIzIi8+PHRleHQgeD0iNDAiIHk9Ijk4NyIgZmlsbD0iIzIxMjUyOSI+YXBwIHRhYjwvdGV4dD4KICA8cmVjdCBjbGFzcz0iZGVjIiB4PSIxMTAiIHk9Ijk3NSIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0Ii8+PHRleHQgeD0iMTMwIiB5PSI5ODciIGZpbGw9IiMyMTI1MjkiPnF1ZXN0aW9uPC90ZXh0PgogIDxyZWN0IGNsYXNzPSJsb29wIiB4PSIyMDUiIHk9Ijk3NSIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMyIvPjx0ZXh0IHg9IjIyNSIgeT0iOTg3IiBmaWxsPSIjMjEyNTI5Ij55b3VyIGRlY2lzaW9uLCB0aGVuIGJhY2s8L3RleHQ+CiAgPHJlY3QgY2xhc3M9ImZhaWwiIHg9IjM5MCIgeT0iOTc1IiB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHJ4PSIzIi8+PHRleHQgeD0iNDEwIiB5PSI5ODciIGZpbGw9IiMyMTI1MjkiPm5vdGhpbmcgcmVsZWFzZWQ6IGZpeCwgdGhlbiBydW4gYWdhaW48L3RleHQ+Cjwvc3ZnPgo=" alt="The Universal Blinder workflow: Study, Pre-flight loop, Run blinding with the codebook loop and the fix loop, QC result, share, retrieve" /></p>
+<p><strong>Which workflow?</strong> Look at PC (the app checks it for
+you once PC is in <code>input</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Your PC dataset</th>
+<th>Workflow</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>has the concentrations</strong> (PCORRES, PCSTRESC, PCSTRESN
+filled in), or there is no PC</td>
+<td><strong>Workflow 1</strong>: blind it as it is</td>
+</tr>
+<tr>
+<td>has the sample records but <strong>no concentrations</strong>, and
+the lab sent them in a separate CSV/Excel file</td>
+<td><strong>Workflow 2</strong>: first put the results into PC
+(<em>Prepare PC</em>), then continue with step 2 of Workflow 1</td>
+</tr>
+</tbody>
+</table>
+<p>Workflow 1 in one line: <strong>Study → Blind &amp; QC: 1. Pre-flight
+(until nothing is left to decide) → 2. Run blinding → Codebook review
+(answer, confirm) → 2. Run blinding again → 3. QC result → share
+<code>output</code>.</strong> Two loops can send you back: the
+pre-flight loop (step 2) and the run loop (steps 3 to 5).</p>
+<h2 id="workflow-1-pc-has-its-results">Workflow 1: PC has its
+results</h2>
+<h3 id="step-1-study-tab-choose-the-study-and-copy-the-datasets">Step 1.
+Study tab: choose the study and copy the datasets</h3>
+<ol type="1">
+<li>Click <em>Browse folders...</em> and pick the study&#39;s folder, or
+paste its full path (for example <code>&quot;C:\projects\ABC-123&quot;</code>;
+quotes are fine). The study folder can have any layout: the app only
+reads it. The app reads the study number from STUDYID (you can change
+it) and shows the folder it proposes:
+<pre><code>&lt;study folder&gt;\UB_&lt;StudyNumber&gt;\
+    blind_options.json  blind.R  prepare_pc.R  retrieve.R
+    input\     the datasets to blind
+    output\    what you may share (after a run)
+    private\   THE KEY, reports, logs: never share</code></pre>
+Click <em>Create the folder</em>. An existing <code>UB_</code> folder is
+opened, never overwritten.</li>
+<li>The app lists every dataset under the study folder with the profile
+it recognises. The targets (PC, ADNCA/ADPC), the exposure datasets (EX,
+EC, ADEX) and the linked datasets (PP, ADPP, ADPD) are selected for you
+(rows highlighted in blue); ADSL and DM are optional (see <a href="#linked-datasets-adsl-and-dm">Linked datasets, ADSL and DM</a>).
+Click a row to highlight or un-highlight it; there are no checkboxes.
+Include <strong>at least one exposure dataset</strong>: the tool learns
+the treatment names from it. Then click the green <em>Copy the N
+highlighted files to input</em> button above the table.</li>
+</ol>
+<h3 id="step-2-blind--qc--1-pre-flight-repeat-until-nothing-is-left-to-decide">Step
+2. Blind &amp; QC → 1. Pre-flight: repeat until nothing is left to
+decide</h3>
+<p>The pre-flight reads the datasets in <code>input</code> and lists
+what the rules do not cover yet, each row with a suggested setting. It
+changes nothing by itself.</p>
+<ol type="1">
+<li>Click <em>Run pre-flight</em>.</li>
+<li><strong>If the table lists rows</strong>, decide each one:
+<ul>
+<li><strong>Accept the suggestion:</strong> click the row to highlight
+it (several rows at once are fine), then click the green <em>Apply
+suggestions</em> button. The setting is saved, and the pre-flight runs
+again by itself: the applied rows disappear.</li>
+<li><strong>A row offering a choice or a condition</strong> (&quot;... or
+...&quot;, &quot;If it is mg/m²: ...&quot;): decide it in <em>Study settings</em>, then
+click <em>Run pre-flight</em> again.</li>
+<li><strong>Leave it as it is:</strong> do nothing. That is your
+decision: the run uses the settings as they are now.</li>
+</ul></li>
+<li><strong>Repeat</strong> until the table is empty (the app says
+<em>Nothing left to decide</em>) or only rows remain that you have
+decided to leave. That is the <strong>final pre-flight</strong>.</li>
+</ol>
+<p>Red rows are the ones QC is likely to fail on (for example DOSEA next
+to a dose per m²; see <a href="#when-qc-reports-warn-or-fail">When QC
+reports WARN or FAIL</a>): leave them only if you know why. Below the
+table, <em>Saved settings</em> lists what you have already chosen for
+this study; the pre-flight does not suggest those again. Details: <a href="#pre-flight-accept-suggestions-with-one-click">Pre-flight: accept
+suggestions with one click</a>.</p>
+<h3 id="step-3-blind--qc--2-run-blinding-the-first-run-stops-for-the-codebook">Step
+3. Blind &amp; QC → 2. Run blinding: the first run stops for the
+codebook</h3>
+<p>Click <em>Run blinding</em>. <strong>The first run always stops
+once</strong> with &quot;new row(s) were added to the codebook&quot;. This is
+expected: the run has built the key and listed in the codebook every
+drug, analyte, arm and cohort name with the code that replaces it. A box
+under the button says so, with a link to <em>Codebook review</em>.</p>
+<h3 id="step-4-codebook-review-answer-the-rows-and-confirm-the-review">Step
+4. Codebook review: answer the rows and confirm the review</h3>
+<p>Everything is done in the app: you do <strong>not</strong> need to
+open <code>codebook.csv</code>.</p>
+<ol type="1">
+<li><strong>Amber rows</strong> (a question in CHECK): read the question
+and check the row. If it is right (or once you have corrected it), click
+the row to highlight it and click <em>Mark the highlighted rows as
+decided</em>. CHECK is emptied and the codebook saved.</li>
+<li><strong>Red rows</strong> (<code>?</code> in BLINDED_VALUE; the run
+stops on them): double-click the <code>?</code>, type a code or
+<code>-</code> (leave the text as it is), press Enter, then click
+<em>Save codebook</em>.</li>
+<li><strong>Confirm the review.</strong> When no row needs an answer,
+untick <em>Rows needing attention only</em>, read every row, then type
+your name and click <strong>I have reviewed the codebook</strong>. This
+is the assurance that a person checked every replaced name: the app
+records your name, the time and a fingerprint of the codes in
+<code>private\codebook_review.json</code>, and shows them in the
+Codebook review, Run blinding, Study and Workflow tabs.</li>
+</ol>
+<p><strong>The run does not start without this confirmation</strong>, in
+the app and in <code>blind.R</code> alike. If a code changes after it
+(you edit a code, or new data brings new rows), <em>Run blinding</em>
+asks you to review and confirm again. Editing only NOTE keeps the
+confirmation. More about the codebook: <a href="#the-codebook-every-replaced-value-and-its-code">The
+codebook</a>.</p>
+<h3 id="step-5-blind--qc--2-run-blinding-again">Step 5. Blind &amp; QC →
+2. Run blinding again</h3>
+<p>Click <em>Run blinding</em>. It ends with one of:</p>
+<table>
+<thead>
+<tr>
+<th>The app says</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FINISHED -- QC PASS</strong> (or <strong>QC
+WARN</strong>)</td>
+<td>The blinded datasets are in <code>output</code></td>
+<td>Step 6</td>
+</tr>
+<tr>
+<td><strong>N codebook row(s) to review</strong> (the run stopped
+again)</td>
+<td>The data brought values the codebook did not have yet</td>
+<td>Step 4 again, then step 5</td>
+</tr>
+<tr>
+<td><strong>Confirm the codebook review first</strong> (the run did not
+start)</td>
+<td>Rows still need an answer, or codes changed after the
+confirmation</td>
+<td>Step 4, then step 5</td>
+</tr>
+<tr>
+<td><strong>NOTHING WAS RELEASED: QC failed</strong> (red)</td>
+<td>A QC check found something that could reveal real information;
+<code>output</code> stays empty</td>
+<td>See below</td>
+</tr>
+<tr>
+<td><strong>NOTHING WAS RELEASED</strong> with an error message
+(red)</td>
+<td>The run stopped on a problem (a file, a setting, a parameter
+code)</td>
+<td>Read the message; <a href="#troubleshooting">Troubleshooting</a>
+lists the common ones</td>
+</tr>
+</tbody>
+</table>
+<p><strong>When nothing was released</strong>, the red box lists each
+failed check (dataset, check, variable, detail). Then:</p>
+<ol type="1">
+<li>Read what failed. <em>Open 3. QC result</em> shows all findings;
+<em>Ask the AI why</em> explains them (the QC findings are sent masked;
+the log is not sent).</li>
+<li>Fix the cause, usually in one of these places:
+<ul>
+<li><em>Open 1. Pre-flight</em> and run it: it often has a row that
+fixes the failure, ready to <em>Apply</em> (for example leaving DOSEA
+out).</li>
+<li><em>Study settings</em>: blank, rename or leave out a variable, or
+turn on a configuration switch.</li>
+<li><em>Codebook review</em>: add a missed spelling of a drug or analyte
+with its code (then confirm the review again).</li>
+<li>A <strong>QC waiver</strong> in Study settings, only for a FAIL you
+have understood and accept, with the reason and the reviewer.</li>
+</ul></li>
+<li>Click <em>Run blinding</em> again. Repeat until it says
+FINISHED.</li>
+</ol>
+<p><a href="#when-qc-reports-warn-or-fail">When QC reports WARN or
+FAIL</a> lists the common failures and their fixes.</p>
+<h3 id="step-6-blind--qc--3-qc-result-read-it-before-sharing">Step 6.
+Blind &amp; QC → 3. QC result: read it before sharing</h3>
+<p>Read <code>qc_summary.md</code> (shown in the tab).
+<strong>PASS</strong>: nothing found. <strong>WARN</strong>: the data
+was released, but read each warning and decide whether it is acceptable
+for the recipient (for example a small group of subjects sharing a rare
+demographic). If it is not, fix it as in step 5 and run again.</p>
+<h3 id="step-7-share-only-output">Step 7. Share only
+<code>output</code></h3>
+<p>Send only the files in <code>output</code> (the blinded datasets,
+<code>qc_summary.md</code>, <code>RELEASE_MANIFEST.md</code>).
+<strong>Never</strong> share <code>input</code> or <code>private</code>.
+After the recipient&#39;s review, use the <strong>Retrieve</strong> tab to
+map their findings back to the original records (see <a href="#reviewing-the-blinded-data-and-getting-the-original-records-back">Reviewing
+the blinded data</a>).</p>
+<h2 id="workflow-2-pc-without-results-results-in-a-separate-file">Workflow
+2: PC without results, results in a separate file</h2>
+<p>Some studies deliver PC with all the sample records but
+<strong>without</strong> the concentrations, and the bioanalytical lab
+sends the concentrations separately with its own column names, for
+example:</p>
+<pre><code>SUBJECT_ID,VISIT_NAME,HOUR NOMINAL,PLANNED_TIME_POINT_NAME,ANALYTE,CONCENTRATION,CONCENTRATION_UNIT,LLOQ
+ABC-123-007-042,C1D1,0,Predose,ABC-55,BLQ&lt;(0.500),ng/mL,0.5
+ABC-123-007-042,C1D1,0.5,0.5 Hour Post Dose,ABC-55,2.29,ng/mL,0.5</code></pre>
+<p><strong>Prepare PC</strong> puts these results into PC
+<strong>before</strong> blinding. They then get the same subject codes,
+date shifts and concentration factors as everything else, so the blinded
+PC matches the blinded ADNCA/ADPC record by record.</p>
+<p>The app checks PC as soon as it is in <code>input</code>. If PCORRES
+is empty, it asks whether the lab sent a CSV or Excel file. If so, copy
+it into <code>input</code> (Study tab) and click <em>Recheck</em>. This
+is a reminder, not a stop: you can also blind PC without results on
+purpose.</p>
+<ol type="1">
+<li><p><strong>Results file and columns.</strong> Choose the file (and
+the Excel sheet), click <em>Read the column names</em>, and pick the
+column for each role. The app guesses from the names.</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subject ID</td>
+<td>full USUBJID, or its last part such as <code>007-042</code></td>
+</tr>
+<tr>
+<td>Visit</td>
+<td>the visit</td>
+</tr>
+<tr>
+<td>Planned time in hours</td>
+<td>matched to PC.PCTPTNUM</td>
+</tr>
+<tr>
+<td>Concentration</td>
+<td>as reported (numbers and <code>BLQ&lt;(x)</code> /
+<code>BQL&lt;(x)</code>)</td>
+</tr>
+<tr>
+<td>Unit, LLOQ, time-point name, analyte, specimen</td>
+<td>optional; the time-point name is needed for time translations, the
+analyte when there are several</td>
+</tr>
+</tbody>
+</table></li>
+<li><p><strong>Analytes.</strong> <em>One analyte</em>: the
+PCTESTCD/PCTEST to put into PC. Use the code the other datasets use
+(ADNCA/ADPC PARAMCD), not the lab&#39;s name. <em>Several analytes</em>: for
+each lab analyte name, the PCTESTCD that PC already has.</p></li>
+<li><p><strong>Translations.</strong> <em>Visit names that differ from
+PC.VISIT</em> (e.g. <code>C1D1</code> → <code>CYCLE 1 DAY 1</code>) and
+<em>time points whose hours differ from PC.PCTPTNUM</em> (e.g. a Day 2
+predose that PC records as the 24 h sample).</p></li>
+<li><p><strong>Cross-check.</strong> The dataset whose AVAL the results
+are compared with (ADNCA or ADPC).</p></li>
+<li><p>Click <strong>Put the results into PC.</strong> The app reports
+how many results it matched, which PC records have no result (normally
+the <code>NOT DONE</code> samples), and whether the results equal AVAL.
+If something does not match, <strong>nothing is written</strong>. The
+unmatched visits and time points are added as red rows to the
+translation tables: fill them in and run again. Prepare PC always starts
+again from the PC you received, kept in
+<code>private\source_original\pc.xpt</code>. A highlighted report is
+written to <code>private\reports\prepare_pc_report.html</code>.</p></li>
+<li><p>Continue with step 2 of Workflow 1 (Pre-flight).</p></li>
+</ol>
+<p>Good to know:</p>
+<ul>
+<li>Values that PC already has are never overwritten; differences are
+reported in red.</li>
+<li>Both spellings <code>BQL&lt;(0.500)</code> and
+<code>BLQ&lt;(0.500)</code> are understood; the LLOQ inside them is
+blinded too.</li>
+<li>The results file can stay in <code>input</code>; it is not blinded
+or released.</li>
+<li>If PC has no results and a results file in <code>input</code> was
+not merged, <em>Run blinding</em> asks whether to go to Prepare PC or
+<strong>continue anyway</strong>. Your choice is recorded in the
+log.</li>
+</ul>
+<h2 id="which-datasets-can-be-blinded">Which datasets can be
+blinded</h2>
+<p>Each file is blinded with the rules (the &quot;profile&quot;) of the dataset
+with the same name:</p>
+<table>
+<thead>
+<tr>
+<th>File name</th>
+<th>Profile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adsl</code></td>
+<td>subject level: IDs, site, covariates, dates, treatment text</td>
+</tr>
+<tr>
+<td><code>ex</code>, <code>ec</code></td>
+<td>exposure (SDTM): treatment names, dates</td>
+</tr>
+<tr>
+<td><code>pc</code></td>
+<td>concentrations (SDTM): analytes, results, LLOQ, dates</td>
+</tr>
+<tr>
+<td><code>adex</code>, <code>adec</code></td>
+<td>exposure (ADaM)</td>
+</tr>
+<tr>
+<td><code>adnca</code>, <code>adpc</code></td>
+<td>concentrations (ADaM): analytes, AVAL, LLOQ, covariates, dates</td>
+</tr>
+<tr>
+<td><code>dm</code></td>
+<td>demographics (SDTM): IDs, site, AGE, arms, dates; investigator and
+birth date blanked</td>
+</tr>
+<tr>
+<td><code>vs</code></td>
+<td>vital signs (SDTM): WEIGHT, HEIGHT, BSA and BMI use the same
+per-subject factor as ADSL WGTBL, HTBL, BSABL and BMIBL</td>
+</tr>
+<tr>
+<td><code>pp</code></td>
+<td>PK parameters (SDTM): scaled with the concentrations&#39; factor per
+parameter</td>
+</tr>
+<tr>
+<td><code>adpp</code></td>
+<td>PK parameters (ADaM): as <code>pp</code>, plus the ADSL-type
+covariates and treatment text</td>
+</tr>
+<tr>
+<td><code>adpd</code></td>
+<td>PD/biomarker concentrations (ADaM, ADNCA structure)</td>
+</tr>
+<tr>
+<td><code>supp*</code></td>
+<td>supplemental qualifiers: free text; date qualifiers are shifted like
+the parent&#39;s dates</td>
+</tr>
+</tbody>
+</table>
+<p>Files are <code>.xpt</code> or <code>.sas7bdat</code>. <strong>PK
+parameters</strong>: CMAX and AUCs scale with the concentrations&#39;
+factor, CL/F and volumes inversely, times and half-lives not at all, so
+blinded CMAX equals the maximum of the blinded concentrations. A
+parameter code the configuration does not know stops the run, so nothing
+is released unscaled; classify it under <em>Configuration changes</em>
+in Study settings (or ask the AI assistant for the setting).</p>
+<p>A file whose name has no profile (e.g. <code>adconc.xpt</code>) stops
+the run before anything is written. If it has the structure of a
+supported dataset, map it under <em>Dataset aliases</em> (e.g.
+<code>ADCONC</code> → <code>ADNCA</code>).</p>
+<h3 id="linked-datasets-adsl-and-dm">Linked datasets, ADSL and DM</h3>
+<p>All datasets of one run are blinded with <strong>one key</strong>, so
+values that correspond in the real data still correspond in the blinded
+data:</p>
+<table>
+<thead>
+<tr>
+<th>Real data (CDISC)</th>
+<th>After blinding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>USUBJID/SUBJID the same in PC, PP, ADNCA/ADPC, ADPP, ADPD, ADSL,
+DM</td>
+<td>the same blinded USUBJID/SUBJID everywhere</td>
+</tr>
+<tr>
+<td>PP.PPCAT = PC.PCTEST (SDTMIG: PPCAT is the PCTEST of the profile);
+ADPP.ATEST/PPCAT = ADNCA.ATEST</td>
+<td>the same analyte code (ANL01, ...) in all of them. If PP names the
+analyte differently (e.g. an abbreviation), declare it under <em>Analyte
+abbreviations</em> in Study settings and it gets the same code</td>
+</tr>
+<tr>
+<td>PP.PPRFTDTC = PC.PCRFTDTC</td>
+<td>the same shifted date: all dates of one subject move by the same
+number of days</td>
+</tr>
+<tr>
+<td>PP.PPSPEC = PC.PCSPEC; VISIT/VISITNUM, AVISIT/AVISITN</td>
+<td>unchanged, so still equal</td>
+</tr>
+<tr>
+<td>AGE, WGTBL, HTBL, ... in ADSL, DM, ADNCA, ADPP, ADPD</td>
+<td>the same blinded value (one factor per subject)</td>
+</tr>
+</tbody>
+</table>
+<p>The study tab marks PP and ADPP as <em>linked: PK parameters</em> and
+ADPD as <em>linked: PD</em>. ADPD is the PD biomarker: it gets its own
+analyte code and its own per-subject factor, but it shares the subjects,
+visits and dates of ADNCA.</p>
+<p><strong>ADSL and DM (<em>subject-level, optional</em>).</strong> They
+can be blinded: IDs and sites are replaced, AGE and baseline
+weight/height/BSA/BMI are scaled per subject (consistently with
+ADNCA/ADPP and VS), all dates are shifted, birth date and investigator
+name are blanked, and arms/treatments are coded. SEX, RACE, ETHNIC and
+COUNTRY are kept, and QC checks that each combination is shared by at
+least 5 subjects. They are still the datasets with the most
+quasi-identifiers, so:</p>
+<ul>
+<li><strong>Leave them out if ADNCA/ADPC and ADPP already carry what the
+analysis needs</strong> (they usually carry AGE, SEX, RACE, WGTBL, arm
+and treatment). Fewer variables released is the safest blinding.</li>
+<li>If ADSL is needed, include <strong>ADSL rather than DM</strong>: DM
+adds nothing ADSL lacks for PK work, and two copies double what can be
+cross-matched.</li>
+<li>Remove the ADSL variables the analysis does not use with <em>Leave
+variables out of the release</em> in Study settings (e.g. disposition,
+death and diagnosis dates, extra flags), and read the QC
+quasi-identifier result: in a small study, COUNTRY or RACE may have to
+be dropped too.</li>
+</ul>
+<h2 id="the-codebook-every-replaced-value-and-its-code">The codebook:
+every replaced value and its code</h2>
+<p>Everything the blinding replaces by a code is listed in
+<strong><code>private\codebook.csv</code></strong>, which the first run
+fills in. You review it in the <strong>Codebook review</strong> tab.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Found in</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>treatments</td>
+<td>EXTRT, ECTRT</td>
+<td><code>TRT01</code>, <code>TRT02</code>, ...</td>
+</tr>
+<tr>
+<td>analytes: the code and every name</td>
+<td>PCTESTCD/PCTEST, PARAMCD/ATEST</td>
+<td><code>ANL01</code>, <code>ANL02</code>, ...</td>
+</tr>
+<tr>
+<td>other spellings of a drug or analyte</td>
+<td>free text, PP.PPCAT, ADPP.ATEST</td>
+<td>the code of the drug or analyte</td>
+</tr>
+<tr>
+<td>arms and cohorts</td>
+<td>ARM/ACTARM, ARMCD, COHORT, TRTxxP/TRTxxA</td>
+<td><code>ARM01</code>, <code>ARMCD01</code>, <code>COHORT01</code>,
+...</td>
+</tr>
+<tr>
+<td>other private text you add</td>
+<td>anywhere in released text</td>
+<td><code>TERM01</code>, ...</td>
+</tr>
+</tbody>
+</table>
+<p>Columns: <code>TYPE</code>, <code>ACTUAL_VALUE</code> (the real
+value), <code>BLINDED_VALUE</code> (the code; <code>?</code> = still to
+be answered, the run stops until it is; <code>-</code> = leave this text
+as it is; empty = next free code), <code>NOTE</code> (why the row was
+added; your own notes), <code>CHECK</code> (the question to answer,
+where your decision is needed).</p>
+<p><strong>To review it:</strong> Everything is done in the app: you do
+<strong>not</strong> need to open <code>codebook.csv</code>.</p>
+<ul>
+<li>The tab shows the rows needing attention (tick off <em>Rows needing
+attention only</em> to see all).</li>
+<li><strong>Amber</strong> rows have a question in CHECK. Read it and
+check ACTUAL_VALUE and BLINDED_VALUE. If the row is right (or once you
+have corrected it), <strong>click the row to highlight it</strong>
+(several rows at once are fine) and click the green <em>Mark the
+highlighted rows as decided</em> button. This empties CHECK and saves
+the codebook.</li>
+<li><strong>Red</strong> rows have <code>?</code>: double-click the
+<code>?</code> in BLINDED_VALUE, type a code or <code>-</code>, press
+Enter, then click <em>Save codebook</em>.</li>
+<li>To change a code or add a NOTE, double-click a cell in
+BLINDED_VALUE, NOTE or CHECK, press Enter, then click <em>Save
+codebook</em>. Every save keeps the previous version in
+<code>private\codebook_backup</code>.</li>
+<li>When no row needs an answer, <strong>confirm the review</strong>:
+type your name and click <em>I have reviewed the codebook</em>. Your
+name, the time and a fingerprint of the codes are kept in
+<code>private\codebook_review.json</code>. <em>Run blinding</em> starts
+only after this confirmation; a changed or new code asks for it again (a
+NOTE does not). A green box then links back to <em>Blind &amp; QC → 2.
+Run blinding</em>.</li>
+<li>Prefer Excel? Click <em>Open in Excel</em>:
+<code>private\reports\codebook_review.xlsx</code> has the same colours
+and a filter, and only BLINDED_VALUE, NOTE and CHECK can be edited. Save
+it, then click <em>Import decisions from Excel</em>: the app shows the
+changes and saves them in the codebook.
+<code>private\reports\codebook_review.html</code> is a read-only
+highlighted copy.</li>
+<li>An <strong>analyte code without a name</strong> (e.g. an ADNCA
+PARAMCD with no ATEST) gets the code of the analyte it belongs to, and
+CHECK asks you to confirm. A code that is both a treatment and an
+analyte (the drug and its plasma concentration) rightly gets a TRT code
+and an ANL code with the same number.</li>
+<li>To renumber, change the code in <strong>every</strong> row that has
+it.</li>
+<li>Upper/lower case does not matter: one row for <code>Alp</code> also
+covers <code>ALP</code> and <code>alp</code>.</li>
+</ul>
+<p>The codebook holds real names: it is PRIVATE, like the key.</p>
+<h2 id="the-study-folder-what-you-may-share-and-what-never">The study
+folder: what you may share, and what never</h2>
+<pre><code>UB_&lt;StudyNumber&gt;\
+  blind_options.json   the study settings (edited in the app)
+  blind.R, prepare_pc.R, retrieve.R   the same steps without the app (open in RStudio, click Source)
+  input\           your unblinded datasets -- PRIVATE
+  output\          the blinded datasets, qc_summary.md, RELEASE_MANIFEST.md -- may be shared
+  private\         PRIVATE, keep it
+    maps\          THE KEY
+    codebook.csv   every replaced value and its code
+    codebook_review.json   who confirmed the codebook review, and when
+    reports\       highlighted codebook and Prepare PC reports (HTML, Excel)
+    source_original\  Workflow 2: the PC as you received it
+    crosswalk\     per release: UBRECID -&gt; original record
+    retrieved\     original records found by Retrieve
+    qc\            full QC report
+    logs\          blind.log, one log per step, prepare_pc.log, ai_log.jsonl</code></pre>
+<ul>
+<li><strong>Share</strong> only the contents of <code>output</code>, and
+only after reading <code>qc_summary.md</code>.</li>
+<li><strong>Never share</strong> <code>input</code> or
+<code>private</code>. <code>private\maps</code> is the key: with it,
+anyone can unblind the data; without it, nobody can, not even you. Keep
+it for as long as you may need to map results back.</li>
+<li>Use one <code>UB_</code> folder per study; never copy a
+<code>private</code> folder to another study.</li>
+<li><code>blind.R</code> follows the same rules as the app: after the
+first run it blinds only a codebook whose review was confirmed. Confirm
+in the app, or in R with
+<code>universalblinder::ub_codebook_confirm_review(&quot;&lt;UB folder&gt;&quot;, &quot;&lt;your name&gt;&quot;)</code>.</li>
+</ul>
+<h2 id="what-the-run-does">What the run does</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. build_maps</td>
+<td>Builds the key, or extends it with new subjects, sites, treatments
+and analytes</td>
+</tr>
+<tr>
+<td>2. blind</td>
+<td>Writes the blinded datasets: a random UBRECID per record,
+<code>blank_where</code> and <code>drop_vars</code> applied, records
+re-sorted by blinded subject</td>
+</tr>
+<tr>
+<td>3. qc</td>
+<td>Tries known re-identification attacks on the blinded data</td>
+</tr>
+<tr>
+<td>4. unblind</td>
+<td>Writes every original record in release order, with its UBRECID, to
+<code>private\unblinded</code></td>
+</tr>
+<tr>
+<td>5. verify</td>
+<td>Proves the link back: each UBRECID maps to exactly one original
+record, and blinding it again gives exactly the released record</td>
+</tr>
+<tr>
+<td>6. release</td>
+<td>Copies the blinded datasets and the public QC summary to
+<code>output</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>output</code> is emptied at the start of every run; if a step
+fails, it stays empty. Each subject&#39;s concentrations are multiplied by a
+random factor between 0.8 and 1.2, and each subject&#39;s dates are shifted
+by a random number of days: profile shapes, timing, ratios and study
+days within a subject stay exact. The planned dose DOSEP is released as
+a whole number (a dose category; e.g. 13.5 becomes 14); the original
+value comes back on retrieval.</p>
+<h2 id="study-settings">Study settings</h2>
+<p>All settings are optional; most studies need none or few. Each is a
+small table in the <strong>Study settings</strong> tab (double-click a
+cell to edit; lists are separated by commas). <em>Save settings</em>
+checks them and keeps the previous version in
+<code>private\settings_backup</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Use it for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dataset aliases</td>
+<td>a file whose name has no profile, e.g. <code>ADCONC</code> →
+<code>ADNCA</code></td>
+</tr>
+<tr>
+<td>Treatment / analyte abbreviations, other codes, other private
+text</td>
+<td>spellings the codebook did not find (the codebook is the recommended
+place)</td>
+</tr>
+<tr>
+<td>Rename variables</td>
+<td>variables whose <strong>name</strong> contains a drug fragment, e.g.
+ADEX <code>DOSEABC</code> → <code>DOSET01</code></td>
+</tr>
+<tr>
+<td>Blank variables</td>
+<td>free text with names or dates (<code>*</code> = every dataset;
+wildcards <code>*</code> <code>?</code>)</td>
+</tr>
+<tr>
+<td>Leave variables out of the release</td>
+<td>anything the blinding cannot protect: rare demographics (RACE,
+ETHNIC), shared calendar dates. The originals come back on
+retrieval</td>
+</tr>
+<tr>
+<td>Blank where a condition holds</td>
+<td>by default, planned doses in mg/m² (with the dose in mg they give
+the real body surface area)</td>
+</tr>
+<tr>
+<td>QC waivers</td>
+<td>a FAIL you reviewed and accept:
+<code>&lt;check&gt;:&lt;DATASET&gt;.&lt;VARIABLE&gt;</code>, with the
+<strong>reason</strong> and the <strong>reviewer</strong> (both
+required)</td>
+</tr>
+<tr>
+<td>Configuration changes</td>
+<td>switches for common cases: ADNCA/ADPC carrying PCTESTCD/PCTEST (on
+by default), ADNCA with PCORRES but no ARESC (round AVAL like PCORRES),
+PC carrying SUBJID, ADNCA labels naming the drug; anything else as
+JSON</td>
+</tr>
+</tbody>
+</table>
+<p>The <em>Pre-flight</em> and the AI assistant suggest settings when a
+study needs them.</p>
+<h3 id="pre-flight-accept-suggestions-with-one-click">Pre-flight: accept
+suggestions with one click</h3>
+<p>The <em>Pre-flight</em> (Blind &amp; QC tab, <em>1. Pre-flight</em>)
+lists what the rules do not cover yet, each with a suggested setting,
+for example <code>drop_vars {&quot;ADNCA&quot;:[&quot;RACE&quot;]}</code> for a rare
+demographic.</p>
+<ol type="1">
+<li>Click <em>Run pre-flight</em>. If the table lists findings, review
+them.</li>
+<li>Click the row of each suggestion you accept: it is highlighted in
+blue. Click it again to remove the highlight.</li>
+<li>Click the green <em>Apply the N highlighted suggestions to the study
+settings</em> button. The settings are saved (the previous version is
+kept in <code>private\settings_backup</code>), and the pre-flight runs
+again, so the applied rows disappear.</li>
+<li>Repeat until the table is empty (<em>Nothing left to decide</em>) or
+only rows you have decided to leave remain, then go to <em>2. Run
+blinding</em>. Rows left in the table are your choice: the run uses the
+settings as they are.</li>
+</ol>
+<p>The datasets in <code>input</code> are <strong>not</strong> changed:
+a variable left out is missing only from <code>output</code>, and comes
+back when you retrieve original records. <code>drop_vars</code> lists
+are merged (RACE and ETHNIC for ADNCA become one list, and what was
+there is kept). Suggestions that offer a choice (&quot;... or ...&quot;) or a
+condition (&quot;If it is mg/m2: ...&quot;) are not applied: the message names
+them; decide them in <em>Study settings</em>.</p>
+<p>Below the table, a box lists the choices already saved for this study
+(the same box as on the Study tab, card <em>3. Status</em>). The
+pre-flight does not suggest these again. Its <em>Reset settings to
+defaults</em> button asks first, keeps a backup, and runs the pre-flight
+again, so the suggestions come back.</p>
+<h2 id="when-qc-reports-warn-or-fail">When QC reports WARN or FAIL</h2>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PASS</td>
+<td>No finding</td>
+<td>Data released</td>
+</tr>
+<tr>
+<td>WARN</td>
+<td>A residual risk worth reading about</td>
+<td>Data released; listed in <code>qc_summary.md</code></td>
+</tr>
+<tr>
+<td>FAIL</td>
+<td>Real information could leak, e.g. a drug name left in a label</td>
+<td>Nothing released</td>
+</tr>
+</tbody>
+</table>
+<p>Common findings and what to do:</p>
+<ul>
+<li><strong>A drug abbreviation or code still appears in free
+text</strong> (FAIL): add it to the codebook with the code of its drug,
+then run again.</li>
+<li><strong>ADNCA/ADPC PCTEST still shows the analyte name</strong>
+(FAIL <code>residual_identity_text</code>): turn on the PCTESTCD/PCTEST
+switch in Study settings → Configuration changes.</li>
+<li><strong>A variable name contains a drug name</strong> (FAIL):
+<em>Rename variables</em>.</li>
+<li><strong>A free-text variable contains dates or names</strong>
+(FAIL): <em>Blank variables</em>.</li>
+<li><strong>Treatment variables in ADNCA/ADPC</strong> (FAIL): include
+an exposure dataset (EX, EC or ADEX) in <code>input</code>.</li>
+<li><strong>A dose per m² next to the dose in mg</strong> (FAIL
+<code>dose_ratio_reveals_bsa</code>): DOSEA ÷ DOSEP gives each subject&#39;s
+real body surface area. The <em>Pre-flight</em> finds such DOSEP levels
+from the data and shows a row for DOSEA (<strong>strongly
+recommended</strong> to leave out: DOSEA divided by the protocol dose
+gives the BSA even without DOSEP) and one for DOSEP (optional).
+Highlight one or both and click <em>Apply</em>.</li>
+<li><strong>Small quasi-identifier groups, or a date shared by most
+subjects</strong> (WARN): usually acceptable for a PK vendor; to remove
+the risk, leave the variable out.</li>
+<li><strong>A FAIL you have reviewed and accept</strong>: add a QC
+waiver with the reason and the reviewer. Never use a waiver to get past
+a FAIL you have not understood.</li>
+</ul>
+<p>When QC fails, the <em>Run blinding</em> tab says so directly: the
+red box lists each failed check (dataset, check, variable, detail), with
+buttons to open <em>1. Pre-flight</em> (it often has a row that fixes
+the failure, ready to <em>Apply</em>) and <em>3. QC result</em>. <em>Ask
+the AI why</em> opens the AI assistant with the QC findings of the last
+run (masked for Claude) and a question filled in. The log is not sent;
+add a line from it to the question if you need to. The same button is
+shown when a run stops with an error.</p>
+<p>Select a finding in the QC result tab and click <em>Ask the AI about
+the selected finding</em> for an explanation and a suggested
+setting.</p>
+<h2 id="reviewing-the-blinded-data-and-getting-the-original-records-back">Reviewing
+the blinded data and getting the original records back</h2>
+<p>Every blinded record has <code>UBRECID</code>, a random 8-character
+identifier. Ask the reviewer to report each finding as a row with the
+columns DATASET, UBRECID, SUBJID, APROFILE, ATEST, AVISIT, FINDING,
+giving the UBRECID of every record involved (or the variables that
+define a group of records).</p>
+<p>In the <strong>Retrieve</strong> tab, upload the findings CSV, paste
+the rows from Excel (with the header), or type them. Click <em>Retrieve
+the original records</em>. The originals are shown in the app and
+written to <code>private\retrieved\&lt;dataset&gt;.csv</code>.
+SUBJID/USUBJID, ATEST/PCTEST, PARAMCD/PCTESTCD and AVISIT/VISIT stand in
+for each other; several values for one variable are separated by
+<code>;</code>.</p>
+<p>Things to know:</p>
+<ul>
+<li>Every run makes a new release with new record identifiers; earlier
+releases are kept, so UBRECIDs from an older review are still
+found.</li>
+<li>The files in <code>input</code> must not change after blinding:
+retrieval refuses a source that differs from the one blinded.</li>
+<li>What the reviewer sees is distorted on purpose: differences between
+subjects smaller than about 20% cannot be judged, and neither can
+calendar-date coincidences across subjects.</li>
+<li><strong>Blinded data is pseudonymised, not anonymised.</strong> Send
+it only where your data-protection rules allow.</li>
+</ul>
+<h2 id="the-ai-assistant">The AI assistant</h2>
+<p>The <strong>AI assistant</strong> tab connects to:</p>
+<ul>
+<li><strong>Claude</strong> through the Anthropic API (cloud). Put your
+key in <code>ANTHROPIC_API_KEY</code> in your <code>.Renviron</code>
+file (in R: <code>usethis::edit_r_environ()</code>), or type it in the
+tab for the current session only. The key is never saved or logged.</li>
+<li><strong>A local model</strong> on your computer: Ollama
+(<code>http://localhost:11434</code>, e.g. <code>qwen3.5:4b</code>) or
+any OpenAI-compatible server (LM Studio, vLLM, llama.cpp). Click
+<em>List installed models</em>.</li>
+</ul>
+<p>Tasks: ask about the workflow; triage pre-flight or QC findings;
+suggest codebook decisions; suggest settings; review the blinded output;
+check inputs that differ from what earlier studies looked like.</p>
+<p><strong>What may be sent where</strong> (enforced by the app, not by
+the model):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Claude (cloud)</th>
+<th>Local model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User guide, column names, counts, settings structure</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Messages (pre-flight, QC, log)</td>
+<td>only with every real name, ID and date replaced by placeholders</td>
+<td>yes, as they are</td>
+</tr>
+<tr>
+<td>Blinded datasets in <code>output</code></td>
+<td>after QC PASS/WARN and your one-time confirmation for the study</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Real values: codebook, <code>input</code>, <code>private</code>,
+retrieved records</td>
+<td><strong>never</strong></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>Before any request to Claude, the whole text is checked for real
+values from the key, the codebook and the input datasets. If one is
+found, the request is <strong>blocked</strong> (there is no override)
+and the app suggests the local model. <em>Codebook decisions</em>
+therefore run only with a local model. <em>Preview what will be
+sent</em> shows the exact text first. Suggestions are shown as a table,
+and nothing changes until you apply them. Rows highlighted in blue will
+be applied: click a row to remove its highlight if you disagree (or to
+highlight it again), then click the green <em>Apply</em> button, which
+shows how many rows are highlighted. Triage rows that only explain a
+finding say <em>explanation only</em> and are never applied. Applied
+settings are added to the study settings: a suggested <em>Leave
+variables out</em> list is merged with the one you already have, not
+replaced. Every change keeps a backup; check it in <em>Study
+settings</em> and run the blinding again. If a model does not answer
+(e.g. a local model times out), switching to another model clears the
+message. Every request is logged in
+<code>private\logs\ai_log.jsonl</code>.</p>
+<h2 id="start-a-study-again-from-scratch">Start a study again from
+scratch</h2>
+<p>What a study remembers is in two places:</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Your choices (variables left out or blanked, aliases, waivers,
+configuration changes, pre-flight suggestions you applied)</td>
+<td><code>blind_options.json</code>, next to <code>input</code>
+(<strong>not</strong> in <code>private</code>)</td>
+<td>The pre-flight does not suggest again what is already there</td>
+</tr>
+<tr>
+<td>The key, the codebook, reports, logs, retrieval records</td>
+<td><code>private</code></td>
+<td>A new key and the codebook stop on the next run</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Study tab</strong> (card <em>3. Status</em>) lists the
+saved choices that differ from the defaults. To start again:</p>
+<ol type="1">
+<li>Click <em>Reset settings to defaults</em> there and confirm. The
+previous <code>blind_options.json</code> is kept in
+<code>private\settings_backup</code>.</li>
+<li>Only if you also want a new key and codebook: delete
+<code>private</code>. Without its <code>maps</code> folder, results can
+no longer be traced back to an earlier release.</li>
+<li>Run the pre-flight. <code>private</code> is created again by the
+next <em>Run blinding</em> (the pre-flight only reads).</li>
+</ol>
+<p><strong>After reinstalling the package</strong>, restart R before
+starting the app again (RStudio: <em>Session → Restart R</em>,
+Ctrl+Shift+F10). R keeps the code it loaded until the session restarts.
+<code>run_app()</code> warns when the session holds an older copy, and
+<code>run_app.bat</code> always starts a fresh R.</p>
+<h2 id="new-data-for-the-same-study">New data for the same study</h2>
+<p>Copy the new files into <code>input</code> (Study tab) and run the
+blinding again. The key is reused and extended: existing subjects,
+sites, treatments and analytes keep their codes, factors and date
+shifts, and new ones are added. Successive deliveries therefore stay
+consistent.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PC has no concentrations ... lab results file ... not merged</code></td>
+<td>Run Prepare PC first, or <em>Continue anyway</em> to blind PC
+without results. If the file in <code>input</code> is not a results
+file, move it out.</td>
+</tr>
+<tr>
+<td>Prepare PC: <code>Nothing was written</code></td>
+<td>The message names the setting to change (column, visit, time point,
+subject or analyte); unmatched values are added in red to the
+translation tables.</td>
+</tr>
+<tr>
+<td><code>This R session is running an older copy of universalblinder</code></td>
+<td>The package was reinstalled after this R session loaded it. Restart
+R (Ctrl+Shift+F10), then <code>run_app()</code> again.</td>
+</tr>
+<tr>
+<td>The pre-flight finds nothing although the study is new</td>
+<td>Choices from an earlier attempt are in
+<code>blind_options.json</code>: see <a href="#start-a-study-again-from-scratch">Start a study again from
+scratch</a>.</td>
+</tr>
+<tr>
+<td><code>no .xpt or .sas7bdat files in ...\input</code></td>
+<td>Copy the datasets into <code>input</code> (Study tab).</td>
+</tr>
+<tr>
+<td><code>no blinding profile for ADXX ...</code></td>
+<td>See <a href="#which-datasets-can-be-blinded">Which datasets can be
+blinded</a>.</td>
+</tr>
+<tr>
+<td><code>both adsl.sas7bdat and adsl.xpt are in ...</code></td>
+<td>Keep only one file per dataset in <code>input</code>.</td>
+</tr>
+<tr>
+<td><code>... new row(s) were added to ...\private\codebook.csv</code></td>
+<td>Expected on the first run and whenever the data brings a new value:
+review the codebook, confirm the review, and run again.</td>
+</tr>
+<tr>
+<td><code>The codebook review is not confirmed: ...</code> (from
+<code>blind.R</code>)</td>
+<td>The same check as in the app: answer the codebook rows, then confirm
+in the app (<em>I have reviewed the codebook</em>) or in R:
+<code>universalblinder::ub_codebook_confirm_review(&quot;&lt;UB folder&gt;&quot;, &quot;&lt;your name&gt;&quot;)</code>.
+Then Source <code>blind.R</code> again. A <code>blind.R</code> copied by
+an older version does not check this: replace it with the package&#39;s
+<code>template_folder/blind.R</code>.</td>
+</tr>
+<tr>
+<td><em>Confirm the codebook review first</em> (Run blinding does not
+start)</td>
+<td>Codebook rows still need an answer, the review was not confirmed, or
+a code changed after it. Open Codebook review, answer the rows, type
+your name and click <em>I have reviewed the codebook</em>.</td>
+</tr>
+<tr>
+<td><code>... codebook.csv needs an answer -- line N: ...</code></td>
+<td>A row still has <code>?</code>, or a spelling names a code that no
+drug or analyte has.</td>
+</tr>
+<tr>
+<td><code>... parameter(s) [...] are not classified in param_scaling_tables.PK_PARAMETERS</code></td>
+<td>A PK parameter code the configuration does not know; classify it
+under Configuration changes.</td>
+</tr>
+<tr>
+<td>QC <code>dose_ratio_reveals_bsa</code></td>
+<td>Leave DOSEA out (strongly recommended), and DOSEP if you wish:
+accept the <em>Pre-flight</em> rows <code>dose_reveals_bsa</code> with
+<em>Apply</em>. A <em>Blank where</em> rule on DOSEP only works if its
+condition variable (e.g. DOSEPU) exists in that dataset.</td>
+</tr>
+<tr>
+<td>Retrieve:
+<code>the source file changed since the release</code></td>
+<td>The file in <code>input</code> is not the one that was blinded. Put
+the original back, or blind again.</td>
+</tr>
+<tr>
+<td>Retrieve: <code>no matching record</code></td>
+<td>Check the spelling of the blinded values the finding quotes.</td>
+</tr>
+<tr>
+<td>AI: <code>Blocked: ...</code></td>
+<td>The request would have sent a real value to the cloud. Use a local
+model.</td>
+</tr>
+<tr>
+<td>AI: no connection / bad key / model not found</td>
+<td>Check the key, the server address (is Ollama running?) and the model
+name; click <em>Test connection</em>.</td>
+</tr>
+</tbody>
+</table>
+<p>For anything else, read <code>private\logs\blind.log</code> and the
+step logs in <code>private\logs</code>.</p>
+</body>
+</html>

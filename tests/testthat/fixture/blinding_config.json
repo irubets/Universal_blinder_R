@@ -1,0 +1,1026 @@
+{
+  "_comment": "Universal Blinder generic configuration (schema 2). Describes the ROLE of standard SDTM/ADaM variables. It contains no study-specific values: treatment/analyte names, IDs and aliases are discovered from the data or supplied in a private study file (study.json) that never belongs in this repository. Variables listed here that are absent from a dataset are ignored.",
+  "schema_version": 2,
+  "placeholder_naming": {
+    "studyid_blind": "STUDY-XXX",
+    "usubjid_blind_template": "{studyid_blind}-{subjid_blind}",
+    "subjid_blind_template": "S{seq:04d}",
+    "siteid_blind_template": "SITE{seq:03d}",
+    "treat_blind_template": "TREAT_{seq:02d}",
+    "treat_alias_blind_template": "Tab{seq:02d}",
+    "analyte_name_blind_template": "ANALYTE_{seq:02d}",
+    "analyte_code_blind_template": "ANALYT{seq:02d}",
+    "analyte_alias_blind_template": "Anb{seq:02d}",
+    "analyte_code_alias_blind_template": "ANL{seq:02d}X",
+    "private_term_blind_template": "TERM_{seq:02d}",
+    "_comment": "Tokens must have at least two cased letters with mixed forms so that UPPER/lower/Title renderings are distinct; this is what makes case-preserving replacement reversible. A running letter suffix (a, b, ...) is appended to alias tokens when an identity has more than one alias."
+  },
+  "codebook": {
+    "_comment": "Codes used when the study has a codebook (the study-folder runner: private/codebook.csv). Treatments become TRT01, TRT02, ...; analytes ANL01, ... (a drug that is also an analyte gets the same number); other private text TERM01, ...; a code is written exactly as given, whatever the case of the text it replaces. category_groups: descriptive grouping variables whose WHOLE value is replaced by one code per value ({group}{seq}: ARM01, ARMCD01, ...). number_with: a group whose values are 1:1 with the named group's values takes the same numbers (ARMCD01 is the arm code of ARM01). in_text: the group's values (of at least category_in_text_min_length characters) are also replaced where they occur inside released free text, e.g. the arm inside APROFILE. A study can change the groups under config_overrides.",
+    "treatment_template": "TRT{seq:02d}",
+    "analyte_template": "ANL{seq:02d}",
+    "text_template": "TERM{seq:02d}",
+    "category_template": "{group}{seq:02d}",
+    "category_in_text_min_length": 6,
+    "category_groups": {
+      "ARM": {
+        "vars": [
+          "ARM",
+          "ACTARM"
+        ],
+        "in_text": true
+      },
+      "ARMCD": {
+        "vars": [
+          "ARMCD",
+          "ACTARMCD"
+        ],
+        "number_with": "ARM"
+      },
+      "COHORT": {
+        "vars": [
+          "COHORT"
+        ],
+        "number_with": "ARM",
+        "in_text": true
+      },
+      "COHORTCD": {
+        "vars": [
+          "COHORTCD"
+        ],
+        "number_with": "ARM"
+      },
+      "REGIMEN": {
+        "vars": [
+          "TRT01P",
+          "TRT01A",
+          "TRT02P",
+          "TRT02A",
+          "TRT03P",
+          "TRT03A",
+          "TRTSEQP",
+          "TRTSEQA"
+        ],
+        "number_with": "ARM",
+        "in_text": true
+      }
+    }
+  },
+  "numeric_blinding": {
+    "multiplier_low": 0.8,
+    "multiplier_high": 1.2,
+    "subject_extra_decimals": 1,
+    "lloq_extra_decimals": 1,
+    "max_inferred_decimals": 6,
+    "bql_imputed_action": "blank",
+    "_comment": "Blinded values are rounded to the source precision (+extra decimals for per-subject covariates and LLOQ). Never publish full-precision products: they let the factor be factored back out (see docs/design.md). bql_imputed_action: 'blank' (default) releases a non-zero result on a BQL record (e.g. LLOQ/2) as missing, together with the values derived from it (analyte_numeric.bql_dependent_vars); next to the blinded LLOQ it would reveal the subject's factor. 'flag' keeps and scales it and makes QC fail (check bql_imputed_value)."
+  },
+  "date_blinding": {
+    "enabled": true,
+    "mode": "per_subject",
+    "shift_days_min": 30,
+    "shift_days_max": 365,
+    "study_constant_date_vars": [
+      "CUTOFFDT",
+      "CUTOFFDTC",
+      "DCUTDT",
+      "DCUTDTC",
+      "DATACUTDT"
+    ],
+    "detect_by_format": true,
+    "detect_by_name_suffix": true,
+    "exclude_vars": [],
+    "shared_date_warn_fraction": 0.25,
+    "shared_date_min_subjects": 5,
+    "partial_dtc_action": "blank",
+    "_comment": "mode per_subject: every date of one subject moves by the same random number of days, so *DY and durations stay exact. Study-constant dates (data cut-off) get one study-level shift instead, because shifting a shared calendar date per subject would reveal each subject's offset. mode per_study: a single offset for everybody. partial_dtc_action: 'blank' (default) removes year-only / year-month ISO dates, which cannot be shifted and would otherwise publish real calendar information; 'keep' leaves them and reports a QC warning."
+  },
+  "qc": {
+    "quasi_identifier_dataset": "ADSL",
+    "quasi_identifiers": [
+      "COUNTRY",
+      "RACE",
+      "ETHNIC",
+      "SEX"
+    ],
+    "k_threshold": 5,
+    "free_text_date_check": true,
+    "gcd_attack_min_records": 5
+  },
+  "common_suppress_vars": [
+    "BRTHDTC",
+    "BRTHDT",
+    "BRTHDTM",
+    "INVNAM",
+    "INVID",
+    "*REFID",
+    "*LNKID",
+    "*LNKGRP",
+    "*NAM",
+    "DDAENO",
+    "DSAENO",
+    "*REASP",
+    "*OTH",
+    "*SPID"
+  ],
+  "_comment_suppress": "Suppressed variables are blanked (character) or set to missing (numeric) and are NOT restored by unblinding. '*' is a wildcard. Birth dates are suppressed because birth year + any real date re-derives the true AGE. *REFID/*LNKID/*LNKGRP hold lab accession numbers, encoded datetimes and codes built from drug abbreviations; *NAM holds vendor/investigator names; *REASP, *OTH (other-specify) and AE-number texts are free text that can contain real dates or names.",
+  "datasets": {
+    "ADSL": {
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE",
+        "WGTBL",
+        "HTBL",
+        "BSABL",
+        "BMIBL",
+        "BSASRN",
+        "WEIGHTBL",
+        "HEIGHTBL",
+        "CRCLBL",
+        "EGFRBL"
+      ],
+      "text_vars": {
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "TRTSEQP": "treatment",
+        "TRTSEQA": "treatment",
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "COHORT": "treatment",
+        "SEQUENCE": "treatment"
+      },
+      "exact_vars": {},
+      "suppress_vars": []
+    },
+    "EX": {
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "text_vars": {
+        "EXCAT": "treatment",
+        "EXSCAT": "treatment"
+      },
+      "exact_vars": {
+        "EXTRT": "treatment"
+      },
+      "suppress_vars": []
+    },
+    "EC": {
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "text_vars": {
+        "ECCAT": "treatment",
+        "ECSCAT": "treatment",
+        "ECDOSTXT": "treatment"
+      },
+      "exact_vars": {
+        "ECTRT": "treatment"
+      },
+      "suppress_vars": []
+    },
+    "PC": {
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "analyte_numeric": {
+        "analyte_var": "PCTESTCD",
+        "variables": [
+          "PCSTRESN"
+        ],
+        "precision_from": "PCSTRESC",
+        "lloq_vars": [
+          "PCLLOQ"
+        ]
+      },
+      "derived_text": [
+        {
+          "target": "PCSTRESC",
+          "source": "PCSTRESN",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "PCORRES",
+          "source": "PCSTRESN",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        }
+      ],
+      "text_vars": {
+        "PCCAT": "treatment",
+        "PCSCAT": "analyte",
+        "PCTPTREF": "treatment"
+      },
+      "exact_vars": {
+        "PCTESTCD": "analyte_code",
+        "PCTEST": "analyte_name"
+      },
+      "analyte_pair": [
+        "PCTESTCD",
+        "PCTEST"
+      ],
+      "suppress_vars": []
+    },
+    "ADEX": {
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "text_vars": {
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "SEQUENCE": "treatment",
+        "PARAM": "treatment",
+        "PARCAT1": "treatment",
+        "AVISIT": "treatment"
+      },
+      "exact_vars": {
+        "EXTRT": "treatment"
+      },
+      "suppress_vars": []
+    },
+    "ADEC": {
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "text_vars": {
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "SEQUENCE": "treatment",
+        "PARAM": "treatment"
+      },
+      "exact_vars": {
+        "ECTRT": "treatment"
+      },
+      "suppress_vars": []
+    },
+    "ADNCA": {
+      "_comment": "PK concentration analysis dataset (ADPC-equivalent). A study whose dataset is called ADPC can map it with \"ADPC\": \"ADNCA\" under dataset_aliases in study.json.",
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE",
+        "WGTBL",
+        "HTBL",
+        "BSABL",
+        "BMIBL",
+        "WEIGHTBL",
+        "HEIGHTBL",
+        "CRCLBL",
+        "EGFRBL"
+      ],
+      "analyte_numeric": {
+        "analyte_var": "PARAMCD",
+        "variables": [
+          "AVAL"
+        ],
+        "precision_from": "ARESC",
+        "lloq_vars": [
+          "PCLLOQ",
+          "LLOQ"
+        ]
+      },
+      "derived_text": [
+        {
+          "target": "ARESC",
+          "source": "AVAL",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "PCORRES",
+          "source": "AVAL",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        }
+      ],
+      "text_vars": {
+        "TREAT": "treatment",
+        "SATRT": "treatment",
+        "ATRT": "treatment",
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "COHORT": "treatment",
+        "SEQUENCE": "treatment",
+        "COHORTCD": "treatment",
+        "DRUGCAT": "treatment",
+        "PARAM": "analyte",
+        "APROFILE": "analyte",
+        "PCTPTREF": "treatment",
+        "ATPTREF": "treatment",
+        "CRIT1": "any",
+        "CRIT2": "any",
+        "CRIT3": "any",
+        "CRIT4": "any",
+        "CRIT5": "any",
+        "CRIT6": "any",
+        "CRIT7": "any",
+        "CRIT8": "any",
+        "CRIT9": "any",
+        "CRIT10": "any",
+        "CRIT11": "any",
+        "CRIT12": "any",
+        "CRIT13": "any",
+        "CRIT14": "any",
+        "CRIT15": "any",
+        "CRIT16": "any",
+        "CRIT17": "any",
+        "CRIT18": "any",
+        "CRIT19": "any",
+        "CRIT20": "any",
+        "CRIT21": "any",
+        "CRIT22": "any",
+        "CRIT23": "any",
+        "CRIT24": "any",
+        "CRIT25": "any",
+        "CRIT26": "any",
+        "CRIT27": "any",
+        "CRIT28": "any",
+        "CRIT29": "any",
+        "CRIT30": "any",
+        "CRIT31": "any",
+        "CRIT32": "any",
+        "CRIT33": "any",
+        "CRIT34": "any",
+        "CRIT35": "any",
+        "CRIT36": "any",
+        "CRIT37": "any",
+        "CRIT38": "any",
+        "CRIT39": "any",
+        "CRIT40": "any"
+      },
+      "exact_vars": {
+        "PARAMCD": "analyte_code",
+        "ATEST": "analyte_name"
+      },
+      "analyte_pair": [
+        "PARAMCD",
+        "ATEST"
+      ],
+      "suppress_vars": []
+    },
+    "ADPC": {
+      "_comment": "PK concentration analysis dataset (ADPC-equivalent). A study whose dataset is called ADPC can map it with \"ADPC\": \"ADNCA\" under dataset_aliases in study.json.",
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE",
+        "WGTBL",
+        "HTBL",
+        "BSABL",
+        "BMIBL",
+        "WEIGHTBL",
+        "HEIGHTBL",
+        "CRCLBL",
+        "EGFRBL"
+      ],
+      "analyte_numeric": {
+        "analyte_var": "PARAMCD",
+        "variables": [
+          "AVAL"
+        ],
+        "precision_from": "ARESC",
+        "lloq_vars": [
+          "PCLLOQ",
+          "LLOQ"
+        ]
+      },
+      "derived_text": [
+        {
+          "target": "ARESC",
+          "source": "AVAL",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "PCORRES",
+          "source": "AVAL",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        }
+      ],
+      "text_vars": {
+        "TREAT": "treatment",
+        "SATRT": "treatment",
+        "ATRT": "treatment",
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "COHORT": "treatment",
+        "SEQUENCE": "treatment",
+        "COHORTCD": "treatment",
+        "DRUGCAT": "treatment",
+        "PARAM": "analyte",
+        "APROFILE": "analyte",
+        "PCTPTREF": "treatment",
+        "ATPTREF": "treatment",
+        "CRIT1": "any",
+        "CRIT2": "any",
+        "CRIT3": "any",
+        "CRIT4": "any",
+        "CRIT5": "any",
+        "CRIT6": "any",
+        "CRIT7": "any",
+        "CRIT8": "any",
+        "CRIT9": "any",
+        "CRIT10": "any",
+        "CRIT11": "any",
+        "CRIT12": "any",
+        "CRIT13": "any",
+        "CRIT14": "any",
+        "CRIT15": "any",
+        "CRIT16": "any",
+        "CRIT17": "any",
+        "CRIT18": "any",
+        "CRIT19": "any",
+        "CRIT20": "any",
+        "CRIT21": "any",
+        "CRIT22": "any",
+        "CRIT23": "any",
+        "CRIT24": "any",
+        "CRIT25": "any",
+        "CRIT26": "any",
+        "CRIT27": "any",
+        "CRIT28": "any",
+        "CRIT29": "any",
+        "CRIT30": "any",
+        "CRIT31": "any",
+        "CRIT32": "any",
+        "CRIT33": "any",
+        "CRIT34": "any",
+        "CRIT35": "any",
+        "CRIT36": "any",
+        "CRIT37": "any",
+        "CRIT38": "any",
+        "CRIT39": "any",
+        "CRIT40": "any"
+      },
+      "exact_vars": {
+        "PARAMCD": "analyte_code",
+        "ATEST": "analyte_name"
+      },
+      "analyte_pair": [
+        "PARAMCD",
+        "ATEST"
+      ],
+      "suppress_vars": []
+    },
+    "DM": {
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE"
+      ],
+      "text_vars": {
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "ACTARMUD": "treatment"
+      },
+      "exact_vars": {},
+      "suppress_vars": []
+    },
+    "VS": {
+      "_comment": "Body-size tests use the SAME per-subject factor as the ADSL covariate they feed (WGTBL, HTBL, BSABL, BMIBL), so blinded baseline VS and blinded ADSL agree. Other vital signs are left as they are.",
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "param_numeric": {
+        "param_var": "VSTESTCD",
+        "variables": [
+          "VSSTRESN"
+        ],
+        "precision_from": "VSSTRESC",
+        "text_vars": [
+          "VSSTRESC",
+          "VSORRES"
+        ],
+        "subject_params": {
+          "WEIGHT": "WGTBL",
+          "HEIGHT": "HTBL",
+          "BSA": "BSABL",
+          "BMI": "BMIBL"
+        },
+        "unlisted": "keep"
+      },
+      "text_vars": {},
+      "exact_vars": {},
+      "suppress_vars": []
+    },
+    "PP": {
+      "_comment": "PK parameters: scaled with the per-subject-per-analyte factor of the concentrations (see param_scaling_tables.PK_PARAMETERS). The analyte is identified by NAME (PPCAT), e.g. ALPHADRUG; a short form such as an abbreviation must be declared in identities.analyte_aliases.",
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "param_numeric": {
+        "param_var": "PPTESTCD",
+        "analyte_var": "PPCAT",
+        "variables": [
+          "PPSTRESN"
+        ],
+        "precision_from": "PPSTRESC",
+        "text_vars": [
+          "PPSTRESC",
+          "PPORRES"
+        ],
+        "table": "PK_PARAMETERS",
+        "unlisted": "error"
+      },
+      "text_vars": {
+        "PPCAT": "analyte",
+        "PPSCAT": "analyte",
+        "PPGRPID": "analyte",
+        "PPTPTREF": "treatment"
+      },
+      "exact_vars": {},
+      "suppress_vars": []
+    },
+    "ADPP": {
+      "_comment": "ADaM PK parameters. Scaling is driven by PPTESTCD (the CDISC parameter code) and the analyte NAME in ATEST.",
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE",
+        "WGTBL",
+        "HTBL",
+        "BSABL",
+        "BMIBL",
+        "WEIGHTBL",
+        "HEIGHTBL",
+        "CRCLBL",
+        "EGFRBL"
+      ],
+      "param_numeric": {
+        "param_var": "PPTESTCD",
+        "analyte_var": "ATEST",
+        "variables": [
+          "AVAL"
+        ],
+        "precision_from": "PPORRES",
+        "text_vars": [
+          "PPORRES",
+          "PPSTRESC",
+          "AVALC"
+        ],
+        "table": "PK_PARAMETERS",
+        "unlisted": "error"
+      },
+      "text_vars": {
+        "TREAT": "treatment",
+        "SATRT": "treatment",
+        "ATRT": "treatment",
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "COHORT": "treatment",
+        "SEQUENCE": "treatment",
+        "COHORTCD": "treatment",
+        "DRUGCAT": "treatment",
+        "PARAM": "analyte",
+        "APROFILE": "analyte",
+        "PPCAT": "analyte",
+        "PPSCAT": "analyte",
+        "PPGRPID": "analyte",
+        "ATPTREF": "treatment",
+        "PPTPTREF": "treatment",
+        "PCTPTREF": "treatment",
+        "CRIT1": "any",
+        "CRIT2": "any",
+        "CRIT3": "any",
+        "CRIT4": "any",
+        "CRIT5": "any",
+        "CRIT6": "any",
+        "CRIT7": "any",
+        "CRIT8": "any",
+        "CRIT9": "any",
+        "CRIT10": "any",
+        "CRIT11": "any",
+        "CRIT12": "any",
+        "CRIT13": "any",
+        "CRIT14": "any",
+        "CRIT15": "any",
+        "CRIT16": "any",
+        "CRIT17": "any",
+        "CRIT18": "any",
+        "CRIT19": "any",
+        "CRIT20": "any",
+        "CRIT21": "any",
+        "CRIT22": "any",
+        "CRIT23": "any",
+        "CRIT24": "any",
+        "CRIT25": "any",
+        "CRIT26": "any",
+        "CRIT27": "any",
+        "CRIT28": "any",
+        "CRIT29": "any",
+        "CRIT30": "any",
+        "CRIT31": "any",
+        "CRIT32": "any",
+        "CRIT33": "any",
+        "CRIT34": "any",
+        "CRIT35": "any",
+        "CRIT36": "any",
+        "CRIT37": "any",
+        "CRIT38": "any",
+        "CRIT39": "any",
+        "CRIT40": "any"
+      },
+      "exact_vars": {
+        "ATEST": "analyte_name"
+      },
+      "suppress_vars": []
+    },
+    "ADPD": {
+      "_comment": "PD (biomarker) concentrations with the ADNCA structure. The biomarker is a separate analyte identity with its own per-subject factor. Change-from-baseline and peak values scale with it; percent/fold changes do not change.",
+      "domain_type": "ADAM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID",
+        "subjid": "SUBJID",
+        "siteid": "SITEID"
+      },
+      "subject_numeric_vars": [
+        "AGE",
+        "WGTBL",
+        "HTBL",
+        "BSABL",
+        "BMIBL",
+        "WEIGHTBL",
+        "HEIGHTBL",
+        "CRCLBL",
+        "EGFRBL"
+      ],
+      "analyte_numeric": {
+        "analyte_var": "PARAMCD",
+        "variables": [
+          "AVAL"
+        ],
+        "precision_from": "ARESC",
+        "lloq_vars": [
+          "PCLLOQ",
+          "LLOQ"
+        ],
+        "derived_variables": [
+          "ABASE",
+          "BASE",
+          "ACHG",
+          "CHG",
+          "APEAK"
+        ],
+        "lloq_text_vars": [
+          "ALLOQ"
+        ],
+        "bql_dependent_vars": {
+          "AVAL": [
+            "ACHG",
+            "CHG",
+            "APCHG",
+            "PCHG",
+            "AFCHG"
+          ],
+          "ABASE": [
+            "ACHG",
+            "APCHG",
+            "AFCHG",
+            "AFPEAK",
+            "APPEAK"
+          ],
+          "BASE": [
+            "CHG",
+            "PCHG"
+          ],
+          "APEAK": [
+            "AFPEAK",
+            "APPEAK"
+          ]
+        }
+      },
+      "derived_text": [
+        {
+          "target": "ARESC",
+          "source": "AVAL",
+          "bql_ref": "ARESC",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "LBORRES",
+          "source": "AVAL",
+          "bql_ref": "LBORRES",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "LBSTRESC",
+          "source": "AVAL",
+          "bql_ref": "LBSTRESC",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "PCORRES",
+          "source": "AVAL",
+          "bql_ref": "PCORRES",
+          "lloq_var": "PCLLOQ"
+        },
+        {
+          "target": "AVALC",
+          "source": "AVAL",
+          "bql_ref": "AVALC",
+          "lloq_var": "PCLLOQ"
+        }
+      ],
+      "text_vars": {
+        "TREAT": "treatment",
+        "SATRT": "treatment",
+        "ATRT": "treatment",
+        "TRT01P": "treatment",
+        "TRT01A": "treatment",
+        "TRT02P": "treatment",
+        "TRT02A": "treatment",
+        "TRT03P": "treatment",
+        "TRT03A": "treatment",
+        "ARM": "treatment",
+        "ACTARM": "treatment",
+        "ARMCD": "treatment",
+        "ACTARMCD": "treatment",
+        "COHORT": "treatment",
+        "SEQUENCE": "treatment",
+        "COHORTCD": "treatment",
+        "DRUGCAT": "treatment",
+        "PARAM": "analyte",
+        "APROFILE": "analyte",
+        "PCTPTREF": "treatment",
+        "ATPTREF": "treatment",
+        "CRIT1": "any",
+        "CRIT2": "any",
+        "CRIT3": "any",
+        "CRIT4": "any",
+        "CRIT5": "any",
+        "CRIT6": "any",
+        "CRIT7": "any",
+        "CRIT8": "any",
+        "CRIT9": "any",
+        "CRIT10": "any",
+        "CRIT11": "any",
+        "CRIT12": "any",
+        "CRIT13": "any",
+        "CRIT14": "any",
+        "CRIT15": "any",
+        "CRIT16": "any",
+        "CRIT17": "any",
+        "CRIT18": "any",
+        "CRIT19": "any",
+        "CRIT20": "any",
+        "CRIT21": "any",
+        "CRIT22": "any",
+        "CRIT23": "any",
+        "CRIT24": "any",
+        "CRIT25": "any",
+        "CRIT26": "any",
+        "CRIT27": "any",
+        "CRIT28": "any",
+        "CRIT29": "any",
+        "CRIT30": "any",
+        "CRIT31": "any",
+        "CRIT32": "any",
+        "CRIT33": "any",
+        "CRIT34": "any",
+        "CRIT35": "any",
+        "CRIT36": "any",
+        "CRIT37": "any",
+        "CRIT38": "any",
+        "CRIT39": "any",
+        "CRIT40": "any"
+      },
+      "exact_vars": {
+        "PARAMCD": "analyte_code",
+        "ATEST": "analyte_name"
+      },
+      "analyte_pair": [
+        "PARAMCD",
+        "ATEST"
+      ],
+      "suppress_vars": []
+    },
+    "SUPPQUAL": {
+      "_comment": "Supplemental qualifiers (SUPPDM, SUPPPC, ...; any file named SUPP* uses this profile). QVAL/QLABEL are free text; QVAL of date qualifiers (QNAM *DTC, *DTM, *DT) is shifted like the parent's dates. keep_vars: QNAM would otherwise be blanked by the common '*NAM' suppression.",
+      "domain_type": "SDTM",
+      "id_vars": {
+        "studyid": "STUDYID",
+        "usubjid": "USUBJID"
+      },
+      "keep_vars": [
+        "QNAM",
+        "IDVAR",
+        "RDOMAIN"
+      ],
+      "text_vars": {
+        "QVAL": "any",
+        "QLABEL": "any"
+      },
+      "row_dates": {
+        "name_var": "QNAM",
+        "value_var": "QVAL",
+        "patterns": [
+          "*DTC",
+          "*DTM",
+          "*DT"
+        ]
+      },
+      "exact_vars": {},
+      "suppress_vars": []
+    }
+  },
+  "dataset_patterns": {
+    "_comment": "Dataset (file) names without a profile of their own that match a pattern use the named profile. An exact profile or a study dataset_alias always wins. '*' and '?' are wildcards.",
+    "SUPP*": "SUPPQUAL"
+  },
+  "param_scaling_tables": {
+    "PK_PARAMETERS": {
+      "_comment": "How each PK parameter (PPTESTCD) moves when the concentrations of its subject/analyte are multiplied by the factor f. 'scale': x*f (concentrations, AUC, AUMC, dose-normalised values). 'inverse': x/f (clearance, volume). 'unscaled': unchanged (times, rate constants, fit statistics, %extrapolated, within-analyte ratios such as accumulation ratio and relative bioavailability). 'own_factor': a separate random per-subject factor (ratios between two analytes, e.g. metabolite/parent, whose true blinded value would need both factors). A parameter that is in none of the lists stops the run (fail closed): add it here or under config_overrides in the study options.",
+      "scale": [
+        "CMAX",
+        "CMIN",
+        "CTROUGH",
+        "CLST",
+        "CAVG",
+        "C0",
+        "CMAXSS",
+        "CMINSS",
+        "CAVGSS",
+        "AUCLST",
+        "AUCALL",
+        "AUCIFO",
+        "AUCIFP",
+        "AUCTAU",
+        "AUCINT",
+        "AUCINTD",
+        "AUCLSTD",
+        "AUCALLD",
+        "AUCIFOD",
+        "AUCIFPD",
+        "AUCTAUD",
+        "CMAXD",
+        "CMIND",
+        "CTROUGHD",
+        "CLSTD",
+        "CAVGD",
+        "AUMCLST",
+        "AUMCIFO",
+        "AUMCIFP",
+        "AUMCTAU",
+        "TOTAUCI"
+      ],
+      "inverse": [
+        "CLO",
+        "CLP",
+        "CLFO",
+        "CLFP",
+        "CLTAU",
+        "CLFTAU",
+        "CLSS",
+        "CLFSS",
+        "VZO",
+        "VZP",
+        "VZFO",
+        "VZFP",
+        "VZTAU",
+        "VZFTAU",
+        "VSSO",
+        "VSSP",
+        "VSSFO",
+        "VSSFP"
+      ],
+      "unscaled": [
+        "TMAX",
+        "TMIN",
+        "TLST",
+        "TLAG",
+        "TROUGH",
+        "LAMZ",
+        "LAMZHL",
+        "LAMZLL",
+        "LAMZUL",
+        "LAMZNPT",
+        "LAMZSPN",
+        "R2",
+        "R2ADJ",
+        "CORRXY",
+        "AUCPEO",
+        "AUCPEP",
+        "AUCINPEO",
+        "AUCINPEP",
+        "AUCPBEO",
+        "AUCPBEP",
+        "MRTIFO",
+        "MRTIFP",
+        "MRTLST",
+        "MRTTAU",
+        "ARCMAX",
+        "ARCMIN",
+        "ARAUC",
+        "ARAUCINT",
+        "ARAUCIFO",
+        "ARAUCLST",
+        "ARAUCTAU",
+        "FREL",
+        "FABS",
+        "FLUCP",
+        "SWING",
+        "PTROUGHR"
+      ],
+      "own_factor": [
+        "MPRCMAX",
+        "MPRAUCIN",
+        "MPRAUCLS",
+        "MPRAUCIF",
+        "MPRAUCTA",
+        "MRCMAX",
+        "MRAUCLST",
+        "MRAUCIFO",
+        "MRAUCIFP",
+        "MRAUCTAU",
+        "MRAUCINT"
+      ]
+    }
+  }
+}
