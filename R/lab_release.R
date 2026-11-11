@@ -190,7 +190,49 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   out <- .ub_lab_layout(bl, pc_xw, lay)
   p <- .ub_lab_layout_path(study, lay)
   utils::write.csv(out, p, row.names = FALSE, na = "", fileEncoding = "UTF-8")
-  list(layout_file = basename(p), layout_md5 = .ub_md5(p), lab_file = lay$lab_file, lab_md5 = lay$lab_md5)
+  list(info = list(layout_file = basename(p), layout_md5 = .ub_md5(p), lab_file = lay$lab_file,
+                   sheet = if (is.null(lay$sheet)) NULL else as.character(lay$sheet), lab_md5 = lay$lab_md5),
+       rows = data.frame(UBRECID = out$UBRECID, SRC_ROW = as.integer(out$LAB_ROW), stringsAsFactors = FALSE))
+}
+
+# Retrieve: the original lab rows behind lab-file findings (by UBRECID, any release). Each release keeps
+# crosswalk/<release>/labpc_labrows.csv (UBRECID -> row of the lab file) and the md5 of the lab file it was made from.
+.ub_lab_names <- function(lab_file) {
+  stem <- tools::file_path_sans_ext(basename(lab_file))
+  toupper(c("LABPC", basename(lab_file), stem, paste0(stem, "_blinded"), paste0(stem, "_blinded.csv")))
+}
+
+.ub_lab_retrieve <- function(folder, root, findings) {
+  rids <- .ub_releases(root)
+  if (!length(rids)) ub_error("no crosswalk found -- run the blinding first")
+  info_of <- function(rid) .read_json(file.path(root, rid, "crosswalk.json"))$datasets$LABPC
+  rows_of <- function(rid) {
+    p <- file.path(root, rid, "labpc_labrows.csv")
+    if (file.exists(p)) utils::read.csv(p, colClasses = c("character", "integer")) else NULL
+  }
+  labs <- list(); out <- NULL
+  for (no in seq_along(findings)) {
+    f <- findings[[no]]; names(f) <- toupper(names(f))
+    if (!UB_RECID_VAR %in% names(f) || !nzchar(trimws(f[[UB_RECID_VAR]])))
+      ub_error("finding ", no, ": a finding on the lab file needs the UBRECID of each row involved")
+    ids <- toupper(unlist(strsplit(trimws(f[[UB_RECID_VAR]]), "[[:space:],;]+"))); ids <- ids[nzchar(ids)]
+    for (rid in rids) {
+      x <- rows_of(rid); if (is.null(x)) next
+      sel <- x[x$UBRECID %in% ids, , drop = FALSE]; if (!nrow(sel)) next
+      info <- info_of(rid)
+      path <- file.path(folder, "input", info$lab_file)
+      if (!file.exists(path) || !identical(.ub_md5(path), info$lab_md5))
+        ub_error("LABPC: the lab file changed since the release (", info$lab_file, ") -- put back the file that was blinded")
+      key <- paste(info$lab_file, info$lab_md5)
+      if (is.null(labs[[key]])) labs[[key]] <- .ub_lab_wrap(.ub_ppc_read_lab(path, info$sheet))
+      lab <- labs[[key]]
+      out <- rbind(out, cbind(data.frame(FINDING_NO = no, FINDING = if ("FINDING" %in% names(f)) f[["FINDING"]] else "",
+                                         UBRECID = sel$UBRECID, RELEASE = rid, LAB_ROW = sel$SRC_ROW, stringsAsFactors = FALSE),
+                              lab[sel$SRC_ROW - 1L, , drop = FALSE], row.names = NULL))
+      ids <- setdiff(ids, sel$UBRECID); if (!length(ids)) break
+    }
+  }
+  out
 }
 
 # qc step: the lab's column names are released too; and warn when most lab rows matched no PC record

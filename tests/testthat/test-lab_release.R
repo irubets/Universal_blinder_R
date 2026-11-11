@@ -243,3 +243,43 @@ test_that("the next run clears an old lab file from output", {
   ub_blind_folder(s$ub, ub_options_for_engine(ub_read_options(s$ub)), quiet = TRUE, steps = "build_maps")
   expect_false(file.exists(file.path(s$ub, "output", "old_blinded.csv")))
 })
+
+# ---- Task 6: Retrieve ----------------------------------------------------------------------------------------------
+test_that("Retrieve returns the original lab rows, under any name of the lab file", {
+  s <- make_lab_study()
+  lab_run(s)
+  L <- read_lab_out(file.path(s$ub, "output", "lab_results_blinded.csv"))
+  pick <- L[c(3, 10), ]
+  for (ds in c("lab_results.csv", "LAB_RESULTS", "lab_results_blinded.csv", "LABPC")) {
+    res <- ub_retrieve_folder(s$ub, list(c(DATASET = ds, UBRECID = paste(pick$UBRECID, collapse = ";"), FINDING = "odd")),
+                              quiet = TRUE)
+    got <- res$LABPC
+    expect_equal(nrow(got), 2)
+    orig <- s$lab[as.integer(pick$LAB_ROW) - 1L, ]
+    expect_equal(got$SUBJECT_ID, orig$SUBJECT_ID)
+    expect_equal(got$CONCENTRATION, orig$CONCENTRATION)
+    expect_equal(got$RUN_DATE, orig$RUN_DATE)
+    expect_equal(got$LAB_ROW, as.integer(pick$LAB_ROW))
+  }
+  expect_true(file.exists(file.path(s$ub, "private", "retrieved", "labpc.csv")))
+  # findings on the datasets still work next to it
+  pc <- ub_read_dataset(file.path(s$ub, "output", "pc.xpt"))$data
+  res <- ub_retrieve_folder(s$ub, list(c(DATASET = "PC", UBRECID = pc$UBRECID[1]),
+                                       c(DATASET = "lab_results.csv", UBRECID = pick$UBRECID[1])), quiet = TRUE)
+  expect_equal(nrow(res$PC), 1); expect_equal(nrow(res$LABPC), 1)
+})
+
+test_that("Retrieve refuses a changed lab file", {
+  s <- make_lab_study()
+  lab_run(s)
+  L <- read_lab_out(file.path(s$ub, "output", "lab_results_blinded.csv"))
+  cat("901-100,P1D1,1,FICT,Plasma,1.0,ng/mL,0.5,01-Jan-2025,\n", file = file.path(s$ub, "input", "lab_results.csv"), append = TRUE)
+  expect_error(ub_retrieve_folder(s$ub, list(c(DATASET = "lab_results.csv", UBRECID = L$UBRECID[1])), quiet = TRUE),
+               "lab file changed")
+})
+
+test_that("a lab finding needs record identifiers", {
+  s <- make_lab_study()
+  lab_run(s)
+  expect_error(ub_retrieve_folder(s$ub, list(c(DATASET = "lab_results.csv", VISIT_NAME = "P1D1")), quiet = TRUE), "UBRECID")
+})

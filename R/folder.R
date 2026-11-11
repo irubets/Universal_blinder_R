@@ -259,7 +259,23 @@ ub_retrieve_folder <- function(folder, findings, options = list(), quiet = FALSE
   study <- ub_study_from_list(raw, folder)
   fs <- if (is.character(findings)) ub_read_findings(findings) else findings
   out_dir <- file.path(folder, "private", "retrieved")
-  res <- ub_retrieve(study, fs, out_dir)
+  # Workflow 3: findings on the released lab file go back to the lab file's own rows
+  root <- .ub_crosswalk_root(study)
+  last <- .ub_releases(root)
+  lab_file <- if (length(last)) .read_json(file.path(root, last[1], "crosswalk.json"))$datasets$LABPC$lab_file else NULL
+  is_lab <- vapply(fs, function(f) { names(f) <- toupper(names(f))
+    !is.null(lab_file) && "DATASET" %in% names(f) && toupper(trimws(f[["DATASET"]])) %in% .ub_lab_names(lab_file) }, logical(1))
+  res <- if (any(!is_lab)) ub_retrieve(study, fs[!is_lab], out_dir) else list()
+  if (any(!is_lab)) for (nm in names(res)) res[[nm]]$FINDING_NO <- which(!is_lab)[res[[nm]]$FINDING_NO]
+  if (any(is_lab)) {
+    lr <- .ub_lab_retrieve(folder, root, fs[is_lab])
+    if (!is.null(lr)) {
+      lr$FINDING_NO <- which(is_lab)[lr$FINDING_NO]
+      res$LABPC <- lr
+      dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+      utils::write.csv(lr, file.path(out_dir, "labpc.csv"), row.names = FALSE, na = "")
+    }
+  }
   for (nm in sort(names(res)))
     say(nm, ": ", nrow(res[[nm]]), " original record(s) for finding(s) ", paste(sort(unique(res[[nm]]$FINDING_NO)), collapse = ", "),
         " -> ", file.path(out_dir, paste0(tolower(nm), ".csv")))

@@ -135,10 +135,11 @@ ub_batch_step <- function(study, step, on_progress = NULL) {
     }
     if ("LABPC" %in% names(study$datasets)) {          # Workflow 3: the lab file in its own layout, linked to this PC
       lw <- .ub_lab_write_layout(study, xws[["PC"]])
-      info$LABPC <- c(info$LABPC, lw)
-      log("lab file in its own layout -> ", lw$layout_file)
+      info$LABPC <- c(info$LABPC, lw$info)
+      log("lab file in its own layout -> ", lw$info$layout_file)
     }
     d <- .ub_write_crosswalk(study, rid, xws, info)
+    if ("LABPC" %in% names(study$datasets)) utils::write.csv(lw$rows, file.path(d, "labpc_labrows.csv"), row.names = FALSE)
     log("crosswalk (record id -> source row) for release ", rid, ": ", d)
     dir.create(study$paths$qc_dir, recursive = TRUE, showWarnings = FALSE)
     writeLines(jsonlite::toJSON(reps, auto_unbox = TRUE, pretty = TRUE, null = "null"), file.path(study$paths$qc_dir, "blind_report.json"))
