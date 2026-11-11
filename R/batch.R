@@ -133,6 +133,11 @@ ub_batch_step <- function(study, step, on_progress = NULL) {
       reps[[nm]] <- rep
       log("blinded ", nm, " -> ", ub_blinded_path(study, nm), " (dropped: ", paste(c(pp$dropped, "-")[1:max(1, length(pp$dropped))], collapse = " "), ")")
     }
+    if ("LABPC" %in% names(study$datasets)) {          # Workflow 3: the lab file in its own layout, linked to this PC
+      lw <- .ub_lab_write_layout(study, xws[["PC"]])
+      info$LABPC <- c(info$LABPC, lw)
+      log("lab file in its own layout -> ", lw$layout_file)
+    }
     d <- .ub_write_crosswalk(study, rid, xws, info)
     log("crosswalk (record id -> source row) for release ", rid, ": ", d)
     dir.create(study$paths$qc_dir, recursive = TRUE, showWarnings = FALSE)
@@ -194,6 +199,7 @@ ub_batch_step <- function(study, step, on_progress = NULL) {
         bad <- names(back)[!vapply(names(back), function(c) c %in% names(rt) && .ub_same_col(back[[c]], rt[[c]]), logical(1))]
         if (length(bad) || !all(as.vector(rt$UBRECID) == ids)) notes <- c(notes, paste("retrieved records differ from the source in", paste(bad, collapse = ", ")))
       }
+      if (nm == "LABPC" && !length(notes)) notes <- .ub_lab_verify(study, bl, cw)
       status <- if (length(notes)) "FAIL" else "PASS"
       res[[nm]] <- list(dataset = nm, status = status, release_id = rid, rows = n, notes = notes)
       log(nm, ": ", status, " ", paste(notes, collapse = "; "))
@@ -211,11 +217,12 @@ ub_batch_step <- function(study, step, on_progress = NULL) {
              paste0("Every record carries ", UB_RECID_VAR, ", a random identifier. Quote it (or the blinded SUBJID/USUBJID, ",
                     "APROFILE, ATEST/PCTESTCD, AVISIT/VISIT) when reporting a finding."), "", "| File | SHA-256 |", "|---|---|")
     for (nm in names(study$datasets)) {
-      src <- ub_blinded_path(study, nm); dst <- file.path(rel, basename(src))
+      src <- if (nm == "LABPC") .ub_lab_layout_path(study) else ub_blinded_path(study, nm); dst <- file.path(rel, basename(src))
       file.copy(src, dst, overwrite = TRUE)
       h <- if (requireNamespace("openssl", quietly = TRUE)) as.character(openssl::sha256(file(dst))) else unname(tools::md5sum(dst))
       man <- c(man, sprintf("| %s | %s |", basename(dst), h)); log("released ", dst)
     }
+    if ("LABPC" %in% names(study$datasets)) man <- c(man, "", .ub_lab_manifest_line(study))
     file.copy(file.path(study$paths$qc_dir, "qc_summary_public.md"), file.path(rel, "qc_summary.md"), overwrite = TRUE)
     writeLines(man, file.path(rel, "RELEASE_MANIFEST.md"))
     list(status = "DONE", detail = rel)

@@ -155,3 +155,81 @@ ub_lab_release_prepare <- function(folder, options = ub_read_options(folder), wr
   }
   list(labpc = L, layout = layout, counts = counts, left_out = left_out, lab_file = s$results_file, lab_md5 = lab_md5)
 }
+
+# ---- the released file: the lab's own layout ----------------------------------------------------------------------
+.ub_lab_layout_read <- function(study) {
+  lay <- jsonlite::fromJSON(file.path(dirname(ub_source_path(study, "LABPC")), "labpc_layout.json"))
+  lay$columns <- as.data.frame(lay$columns, stringsAsFactors = FALSE)
+  lay
+}
+
+# private/blinded/<lab file stem>_blinded.csv
+.ub_lab_layout_path <- function(study, lay = .ub_lab_layout_read(study))
+  file.path(study$paths$blinded_dir, paste0(tools::file_path_sans_ext(basename(lay$lab_file)), "_blinded.csv"))
+
+# The blinded LABPC in the lab's layout: UBRECID, LAB_ROW, the lab's role and kept columns (lab names, lab order),
+# PC_UBRECID (the matched record of the PC released with it; "" when none) and MATCH_STATUS. All columns are text.
+.ub_lab_layout <- function(bl, pc_xw, lay) {
+  chr <- function(x) { x <- as.character(x); x[is.na(x)] <- ""; x }
+  out <- data.frame(UBRECID = chr(bl[[UB_RECID_VAR]]), LAB_ROW = chr(as.integer(bl$LABROW)), stringsAsFactors = FALSE)
+  cols <- lay$columns
+  for (i in seq_len(nrow(cols))) out[[cols$lab_name[i]]] <- chr(bl[[cols$labpc_name[i]]])
+  pr <- suppressWarnings(as.integer(bl$PCSRCROW))
+  out$PC_UBRECID <- chr(if (is.null(pc_xw)) rep(NA_character_, nrow(bl)) else pc_xw$UBRECID[match(pr, pc_xw$SRC_ROW)])
+  out$MATCH_STATUS <- chr(bl$MATCHST)
+  out
+}
+
+.ub_lab_read_out <- function(path) utils::read.csv(path, colClasses = "character", check.names = FALSE,
+                                                   na.strings = character(), fileEncoding = "UTF-8")
+
+# blind step: write the lab-layout file next to the blinded datasets; returns what crosswalk.json records about it
+.ub_lab_write_layout <- function(study, pc_xw) {
+  lay <- .ub_lab_layout_read(study)
+  bl <- ub_read_dataset(ub_blinded_path(study, "LABPC"))$data
+  out <- .ub_lab_layout(bl, pc_xw, lay)
+  p <- .ub_lab_layout_path(study, lay)
+  utils::write.csv(out, p, row.names = FALSE, na = "", fileEncoding = "UTF-8")
+  list(layout_file = basename(p), layout_md5 = .ub_md5(p), lab_file = lay$lab_file, lab_md5 = lay$lab_md5)
+}
+
+# qc step: the lab's column names are released too; and warn when most lab rows matched no PC record
+.ub_lab_qc <- function(study, df, name_terms, alnum, add) {
+  lay <- .ub_lab_layout_read(study)
+  for (c in lay$columns$lab_name)
+    if (any(vapply(name_terms, function(x) grepl(x, alnum(c), fixed = TRUE), logical(1))))
+      add("FAIL", "identity_in_varname", "LABPC", c, paste0("lab column name ", c, " contains an identity fragment"),
+          "a variable name contains an identity fragment")
+  n <- nrow(df); m <- sum(df$MATCHST == .UB_MATCH_STATUS[["matched"]])
+  if (n && m / n < 0.5) {
+    msg <- sprintf("%d of %d lab rows matched a PC record", m, n)
+    add("WARN", "lab_match_rate", "LABPC", "MATCHST", paste0(msg, ": check the visit and time translations (Prepare PC)"), msg)
+  }
+}
+
+# verify step: the released lab file is exactly the blinded LABPC in the lab's layout, linked to the released PC
+.ub_lab_verify <- function(study, bl, cw) {
+  lay <- .ub_lab_layout_read(study)
+  p <- .ub_lab_layout_path(study, lay)
+  if (!file.exists(p)) return("the lab file in its own layout is missing")
+  notes <- character()
+  if (!identical(.ub_md5(p), cw$info$LABPC$layout_md5)) notes <- c(notes, "the lab file changed after the blind step")
+  re <- .ub_lab_layout(bl, cw$xw$PC, lay)
+  got <- .ub_lab_read_out(p)
+  if (!identical(names(re), names(got))) notes <- c(notes, "the lab file's columns differ from a re-run of its layout")
+  else {
+    bad <- names(re)[!vapply(names(re), function(c) identical(re[[c]], got[[c]]), logical(1))]
+    if (length(bad)) notes <- c(notes, paste("the lab file differs from a re-run of its layout in", paste(bad, collapse = ", ")))
+  }
+  ids <- got$PC_UBRECID[nzchar(got$PC_UBRECID)]
+  if (length(ids) && !all(ids %in% cw$xw$PC$UBRECID)) notes <- c(notes, "the lab file links to records that are not in the released PC")
+  notes
+}
+
+# release step: the manifest line about the lab file
+.ub_lab_manifest_line <- function(study) {
+  m <- ub_read_dataset(ub_blinded_path(study, "LABPC"))$data$MATCHST
+  k <- sum(m == .UB_MATCH_STATUS[["matched"]])
+  sprintf("Lab file: %d rows released, %d matched to PC, %d not matched (MATCH_STATUS; PC_UBRECID links a row to its PC record).",
+          length(m), k, length(m) - k)
+}

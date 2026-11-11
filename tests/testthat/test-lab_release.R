@@ -165,3 +165,81 @@ test_that("PC without results does not stop the run in Workflow 3", {
   expect_true(file.exists(file.path(s$ub, "private", "lab", "labpc.xpt")))
   expect_true(any(grepl("Workflow 3", readLines(file.path(s$ub, "private", "logs", "blind.log")))))
 })
+
+# ---- Task 5: the released lab file -------------------------------------------------------------------------------
+read_lab_out <- function(p) utils::read.csv(p, colClasses = "character", check.names = FALSE, na.strings = character(),
+                                            fileEncoding = "UTF-8")
+
+test_that("the released lab file has the lab layout and the PC link", {
+  s <- make_lab_study()
+  r <- lab_run(s)
+  expect_true(r$released)
+  out <- file.path(s$ub, "output")
+  expect_true(file.exists(file.path(out, "lab_results_blinded.csv")))
+  expect_false(file.exists(file.path(out, "labpc.xpt")))
+  L <- read_lab_out(file.path(out, "lab_results_blinded.csv"))
+  expect_equal(names(L), c("UBRECID", "LAB_ROW", names(s$lab), "PC_UBRECID", "MATCH_STATUS"))
+  expect_equal(nrow(L), nrow(s$lab) - 1)
+  pc <- ub_read_dataset(file.path(out, "pc.xpt"))$data
+  linked <- nzchar(L$PC_UBRECID)
+  expect_true(all(L$PC_UBRECID[linked] %in% pc$UBRECID))
+  expect_true(all(L$MATCH_STATUS[linked] == "matched"))
+  expect_true(all(!nzchar(L$PC_UBRECID[L$MATCH_STATUS == "no PC record at this visit/time"])))
+  bl <- ub_read_dataset(file.path(s$ub, "private", "blinded", "labpc.xpt"))$data
+  b <- bl[match(L$UBRECID, bl$UBRECID), ]
+  p <- pc[match(L$PC_UBRECID[linked], pc$UBRECID), ]
+  expect_equal(p$USUBJID, L$SUBJECT_ID[linked])                                   # same blinded subject
+  expect_equal(p$USUBJID, b$USUBJID[linked])
+  expect_equal(p$VISIT, b$VISIT[linked])                                          # the translated visit
+  expect_equal(as.numeric(p$PCTPTNUM), as.numeric(b$PCTPTNUM[linked]))
+  rep <- L[L$LAB_ROW %in% c("2", as.character(nrow(s$lab))), ]
+  expect_equal(rep$PC_UBRECID[1], rep$PC_UBRECID[2]); expect_true(nzchar(rep$PC_UBRECID[1]))
+  expect_equal(unique(L$VISIT_NAME), c("P1D1", "P2D1"))                           # the lab's own texts
+  expect_equal(unique(L$SPECIMEN), "Plasma")
+  txt <- paste(readLines(file.path(out, "lab_results_blinded.csv"), encoding = "UTF-8"), collapse = "\n")
+  expect_false(grepl(REAL_LOOKING, txt, perl = TRUE))
+  man <- readLines(file.path(out, "RELEASE_MANIFEST.md"))
+  expect_true(any(grepl("lab_results_blinded.csv", man, fixed = TRUE)))
+  expect_true(any(grepl(sprintf("Lab file: %d rows released, %d matched to PC, %d not matched",
+                                nrow(L), sum(L$MATCH_STATUS == "matched"), sum(L$MATCH_STATUS != "matched")), man, fixed = TRUE)))
+})
+
+test_that("QC: lab_match_rate warns under 50 percent, and the file is still released", {
+  s <- make_lab_study()
+  o <- ub_read_options(s$ub); o$prepare_pc$visit_map <- list(P1D1 = "X", P2D1 = "Y"); ub_write_options(s$ub, o, backup = FALSE)
+  r <- lab_run(s)
+  expect_true(r$released)
+  f <- jsonlite::fromJSON(file.path(s$ub, "private", "qc", "qc_report.json"))$findings
+  expect_true(any(f$check == "lab_match_rate" & f$status == "WARN"))
+})
+
+test_that("QC fails a kept lab column whose name is a drug name", {
+  s <- make_lab_study(function(l) { names(l)[names(l) == "COMMENT"] <- "FICTINIB"; l })
+  o <- ub_read_options(s$ub); o$lab_release$keep_columns <- list("RUN_DATE", "FICTINIB"); ub_write_options(s$ub, o, backup = FALSE)
+  r <- lab_run(s)
+  expect_false(r$released)
+  f <- jsonlite::fromJSON(file.path(s$ub, "private", "qc", "qc_report.json"))$findings
+  expect_true(any(f$check == "identity_in_varname" & f$dataset == "LABPC" & f$status == "FAIL"))
+})
+
+test_that("verify rebuilds the lab file and catches a change", {
+  s <- make_lab_study()
+  lab_run(s)
+  v <- jsonlite::fromJSON(file.path(s$ub, "private", "qc", "verify_report.json"))
+  expect_equal(v$LABPC$status, "PASS")
+  p <- file.path(s$ub, "private", "blinded", "lab_results_blinded.csv")
+  x <- read_lab_out(p); x$CONCENTRATION[5] <- "999"
+  utils::write.csv(x, p, row.names = FALSE, fileEncoding = "UTF-8")
+  ub_blind_folder(s$ub, ub_options_for_engine(ub_read_options(s$ub)), quiet = TRUE, steps = "verify")
+  v <- jsonlite::fromJSON(file.path(s$ub, "private", "qc", "verify_report.json"))
+  expect_equal(v$LABPC$status, "FAIL")
+  expect_match(paste(v$LABPC$notes, collapse = " "), "lab file")
+})
+
+test_that("the next run clears an old lab file from output", {
+  s <- make_lab_study()
+  dir.create(file.path(s$ub, "output"), showWarnings = FALSE)
+  writeLines("x", file.path(s$ub, "output", "old_blinded.csv"))
+  ub_blind_folder(s$ub, ub_options_for_engine(ub_read_options(s$ub)), quiet = TRUE, steps = "build_maps")
+  expect_false(file.exists(file.path(s$ub, "output", "old_blinded.csv")))
+})

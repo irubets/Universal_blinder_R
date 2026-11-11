@@ -167,7 +167,7 @@ ub_check_pc_results <- function(folder) {
   paths <- lapply(.FOLDER_PATHS, function(p) file.path(folder, p))
   for (p in paths) dir.create(p, recursive = TRUE, showWarnings = FALSE)
   # output/ holds only the result of this run: empty it before anything else
-  old <- list.files(paths$release_dir, pattern = "\\.(xpt|md)$", ignore.case = TRUE, full.names = TRUE)
+  old <- list.files(paths$release_dir, pattern = "(\\.(xpt|md)|_blinded\\.csv)$", ignore.case = TRUE, full.names = TRUE)
   if (length(old)) file.remove(old)
 
   datasets <- .discover_datasets(paths$source_dir)

@@ -52,6 +52,7 @@ ub_run_qc <- function(study, keys, blinded, blind_reports = list()) {
                     "\\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]* \\d{1,2},? (19|20)\\d{2}\\b|\\b\\d{1,2}/\\d{1,2}/(19|20)\\d{2}\\b|",
                     "(?<!\\d)(19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])(\\d{4})?(?!\\d)")
 
+  if ("LABPC" %in% names(blinded)) .ub_lab_qc(study, blinded$LABPC$data, name_terms, alnum, add)   # Workflow 3
   for (nm in names(blinded)) {
     df <- blinded[[nm]]$data; meta <- blinded[[nm]]$meta; ds <- cfg$datasets[[nm]]
     ren <- keys$renames[[nm]]
