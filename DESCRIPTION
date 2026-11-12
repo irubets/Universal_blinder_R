@@ -1,7 +1,7 @@
 Package: universalblinder
 Type: Package
 Title: Reversible, Disclosure-Checked Blinding of SDTM/ADaM PK Datasets, with a Shiny App
-Version: 3.0.0
+Version: 3.1.0
 Authors@R: person("Igor", "Rubets", role = c("aut", "cre"), email = "igor.rubets@gmail.com")
 Description: Produces de-identified ("blinded") copies of clinical
     pharmacokinetic SDTM/ADaM datasets that keep working in the same
