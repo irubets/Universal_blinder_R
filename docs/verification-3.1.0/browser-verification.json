@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "version": "3.1.0",
+  "shinyWebsocketConnected": true,
+  "missingDependencies": 0,
+  "guideImagesLoaded": 16,
+  "readmeServed": true,
+  "userguideServed": true,
+  "javascriptErrors": []
+}
