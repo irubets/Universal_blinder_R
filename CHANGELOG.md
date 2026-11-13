@@ -1,5 +1,12 @@
 # Change history
 
+## Documentation update (2026-11-13)
+
+- Added 15 captioned screenshots using synthetic demonstration data only; synchronized the in-app guide and rebuilt the self-contained HTML guide.
+- Added an accessible full-size image viewer with keyboard scrolling, Escape/close controls and focus restoration. Fixed narrow-screen dialog sizing and verified layouts from 320 to 1440 pixels.
+- Reviewed the package for public distribution, including package checks, synthetic-fixture provenance, Git history and credential/private-value scans.
+
+
 ## 3.1.0 (2026-11-12): Workflow 3
 
 - **Workflow 3: release the lab file blinded** when its results can't be put into PC (times don't line up, rows missing on one side). Switch in *Prepare PC* (card 4, `lab_release` in `blind_options.json`), with *Check matching* (`ub_lab_release_prepare(write = FALSE)`). The lab file becomes LABPC, blinded in the same run as PC (same key and factors, same QC, verify), and is released as `output/lab_results_blinded.csv` (a fixed name) in the lab's own layout plus `UBRECID`, `PC_UBRECID` (the matched PC record) and `MATCH_STATUS`. Lab subjects not in PC, unknown analytes and results with a number that are neither plain numbers nor BLQ<(x) are left out and reported. Kept date columns are read in the common lab formats (and Excel dates) and shifted; kept number columns are refused; QC fails calendar dates in released lab texts. New QC WARN `lab_match_rate`. Retrieve maps lab findings back to the original lab rows. The app proposes Workflow 3 after an unmatched Prepare PC run, in the PC notice, in the "PC has no results" window, and in the Pre-flight.

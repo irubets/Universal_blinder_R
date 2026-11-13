@@ -16,3 +16,33 @@ th { background: var(--head-bg); }
 img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
 hr { border: 0; border-top: 1px solid var(--line); }
 @media print { body { max-width: none; } h2 { page-break-before: auto; } }
+
+/* Screenshots remain readable inline and can be expanded without leaving the guide. */
+body { overflow-wrap: anywhere; }
+img { box-sizing: border-box; border: 1px solid var(--line); border-radius: 4px; }
+p:has(> img) { margin-bottom: .35em; }
+p:has(> img) + p:has(> em:only-child) { margin-top: .35em; color: #495057; font-size: .92em; }
+img[role="button"] { cursor: zoom-in; }
+img[role="button"]:focus-visible { outline: 3px solid var(--link); outline-offset: 4px; }
+.guide-viewer { width: calc(100vw - 32px); max-width: none; height: calc(100vh - 32px); max-height: none;
+  padding: 0; border: 1px solid var(--line); border-radius: 6px; color: var(--fg); background: white; }
+.guide-viewer::backdrop { background: rgba(0,0,0,.65); }
+.guide-viewer header { display: flex; align-items: center; gap: 1em; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.guide-viewer header p { margin: 0; }
+.guide-viewer button { padding: 8px 16px; border: 1px solid #495057; border-radius: 4px; background: white;
+  font: inherit; cursor: pointer; }
+.guide-viewer[open] { display: flex; flex-direction: column; overflow: hidden; }
+.guide-viewer header { flex: 0 0 auto; }
+.guide-viewer button { flex: 0 0 auto; white-space: nowrap; }
+.guide-image-scroll { overflow: auto; flex: 1 1 auto; min-height: 0; overscroll-behavior: contain; }
+.guide-image-scroll:focus-visible { outline: 3px solid var(--link); outline-offset: -3px; }
+.guide-viewer img { max-width: none; width: auto; margin: 0; border: 0; border-radius: 0; }
+@media (max-width: 600px) { body { padding: 16px 12px 40px; } h1 { font-size: 1.65em; } }
+@media print {
+  img, pre, tr { break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; }
+  table { display: table; font-size: 10pt; }
+  th, td { overflow-wrap: anywhere; }
+  .guide-viewer { display: none !important; }
+}

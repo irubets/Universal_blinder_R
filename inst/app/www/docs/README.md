@@ -30,6 +30,8 @@ Open the **Study** tab, choose your study's folder (folder tree, or paste its fu
 | **has the concentrations** (PCORRES, PCSTRESC, PCSTRESN filled in) | **Workflow 1:** *Blind & QC* → *Codebook review* → *Blind & QC* again |
 | **has the samples but no concentrations**, and the lab sent the results in a **separate CSV or Excel file** | **Workflow 2:** copy the results file into `input` too, then *Prepare PC* first, then as Workflow 1 |
 
+If the lab results cannot be matched into PC, **Workflow 3** releases the lab file blinded alongside PC, using the same study key. In **Prepare PC**, review **Check matching** and enable the separate blinded lab release.
+
 Share only the files in `output`. Never share `input` or `private`.
 
 After a review of the blinded data, the **Retrieve** tab returns the original records behind the reviewer's findings. The **AI assistant** tab connects to Claude (Anthropic API) or a local model (Ollama, LM Studio, ...) to explain QC findings, suggest settings and codebook decisions, and review the blinded output. Real values never go to the cloud: the app checks every request and blocks it if one is found.

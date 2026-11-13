@@ -16,7 +16,7 @@ if (is.na(pandoc) || !nzchar(pandoc)) stop("pandoc not found: install it (https:
 
 if (!file.exists("USERGUIDE.md")) stop("Run this from the package folder (the one with USERGUIDE.md).")
 args <- c("USERGUIDE.md", "-f", "gfm", "-t", "html5", "--standalone", "--embed-resources",
-          "--css", "tools/userguide.css", "--metadata", "pagetitle=Universal Blinder: user guide",
+          "--css", "tools/userguide.css", "--include-after-body", "tools/userguide-viewer.html", "--metadata", "pagetitle=Universal Blinder: user guide", "--metadata", "lang=en",
           "-o", "USERGUIDE.html")
 st <- system2(pandoc, shQuote(args))
 if (!identical(as.integer(st), 0L)) stop("pandoc failed (exit ", st, ")")

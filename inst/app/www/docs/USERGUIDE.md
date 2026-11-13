@@ -1,5 +1,7 @@
 # Universal Blinder: user guide
 
+Version 3.1.0 · Illustrated edition · November 13, 2026
+
 Universal Blinder makes **blinded copies of pharmacokinetic (PK) datasets** (SDTM and ADaM, e.g. PC, EX, ADSL, ADNCA/ADPC, ADPP) that you can send to a CRO, a vendor, another team or a review tool. The copies keep their structure, so NCA and review programs still run on them. Subjects, sites, treatment and analyte names, dates, covariates and concentrations are disguised in a consistent way across all datasets of a study. A private **key**, which never leaves your computer, maps every finding back to the original records.
 
 Everything is done in the **app**. You do not need to write or edit code.
@@ -7,21 +9,22 @@ Everything is done in the **app**. You do not need to write or edit code.
 ## Contents
 1. [Install and start](#install-and-start)
 2. [The app at a glance](#the-app-at-a-glance)
-3. [The workflow at a glance](#the-workflow-at-a-glance)
-4. [Workflow 1: PC has its results](#workflow-1-pc-has-its-results)
-5. [Workflow 2: PC without results, results in a separate file](#workflow-2-pc-without-results-results-in-a-separate-file)
-6. [Workflow 3: the results can't be put into PC: release the lab file blinded](#workflow-3-the-results-cant-be-put-into-pc-release-the-lab-file-blinded)
-7. [Which datasets can be blinded](#which-datasets-can-be-blinded)
-8. [The codebook](#the-codebook-every-replaced-value-and-its-code)
-9. [The study folder: what you may share, and what never](#the-study-folder-what-you-may-share-and-what-never)
-10. [What the run does](#what-the-run-does)
-11. [Study settings](#study-settings)
-12. [When QC reports WARN or FAIL](#when-qc-reports-warn-or-fail)
-13. [Reviewing the blinded data and getting the original records back](#reviewing-the-blinded-data-and-getting-the-original-records-back)
-14. [The AI assistant](#the-ai-assistant)
-15. [Start a study again from scratch](#start-a-study-again-from-scratch)
-16. [New data for the same study](#new-data-for-the-same-study)
-17. [Troubleshooting](#troubleshooting)
+3. [The tabs, one by one](#the-tabs-one-by-one)
+4. [The workflow at a glance](#the-workflow-at-a-glance)
+5. [Workflow 1: PC has its results](#workflow-1-pc-has-its-results)
+6. [Workflow 2: PC without results, results in a separate file](#workflow-2-pc-without-results-results-in-a-separate-file)
+7. [Workflow 3: the results can't be put into PC: release the lab file blinded](#workflow-3-the-results-cant-be-put-into-pc-release-the-lab-file-blinded)
+8. [Which datasets can be blinded](#which-datasets-can-be-blinded)
+9. [The codebook](#the-codebook-every-replaced-value-and-its-code)
+10. [The study folder: what you may share, and what never](#the-study-folder-what-you-may-share-and-what-never)
+11. [What the run does](#what-the-run-does)
+12. [Study settings](#study-settings)
+13. [When QC reports WARN or FAIL](#when-qc-reports-warn-or-fail)
+14. [Reviewing the blinded data and getting the original records back](#reviewing-the-blinded-data-and-getting-the-original-records-back)
+15. [The AI assistant](#the-ai-assistant)
+16. [Start a study again from scratch](#start-a-study-again-from-scratch)
+17. [New data for the same study](#new-data-for-the-same-study)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -50,7 +53,305 @@ Everything is done in the **app**. You do not need to write or edit code.
 | **AI assistant** | Ask Claude or a local model about the workflow, QC findings, settings, the codebook, or the blinded data |
 | **Setup / About** | Installation check |
 
-Colours mean the same in every table and report: **red** = must fix, **amber** = needs your decision or attention, no colour = OK.
+Colours mean the same in every table and report: **red** = must fix, **amber** = needs your decision or attention, no colour = OK. Each tab is explained, with a screenshot and every control, in [The tabs, one by one](#the-tabs-one-by-one).
+
+## The tabs, one by one
+
+This part explains every tab: **what it is for**, **when you need it**, and **what each button, box and table does**. You do not have to read it in order. If you are new, read *Before you start* and *Your first session in six clicks*, then use the tab sections as a reference while you work.
+
+All screenshots in this guide were captured from the running app using the bundled synthetic study and a separate mock lab-results study. Drug names such as Fictinib and Synthazole, subject identifiers, results and findings are invented. No original study input data or private key was used or loaded to create these screenshots. No AI requests were sent while preparing this guide. Screenshots show different stages of the demonstration; they are navigation examples, not evidence that a real study is safe to release. Scroll down in the app when a control is below the visible part of a screenshot. In the standalone HTML guide, click a screenshot (or focus it and press Enter) to inspect it at full size. Scroll within the enlarged image and use **Close image** or **Escape** to return. The PNG files are also available in `inst/app/www/docs/screenshots`.
+
+### Before you start: how the screen is built
+
+![The app window: the tab bar at the top, the study bar under it, the tab's content below](inst/app/www/docs/screenshots/01-app-overview.png)
+
+*Figure 1. Start here: the tab bar, study banner and Workflow page before choosing a study.*
+
+1. **Tab bar** (top): one tab per task. **Setup / About** sits at the far right. You can click any tab at any time; nothing is lost when you switch.
+2. **Study bar** (directly under the tab bar): shows the **study folder** the app is working on, and the warning that `input\` and `private\` hold real data and must never be shared. Before you choose a study it says *No study selected: start in the 'Study' tab*.
+3. **Tab content** (below): the cards, tables and buttons of the selected tab.
+
+Conventions used everywhere:
+
+| What you see | What it means |
+|---|---|
+| **Green button** | The main action of the screen (run, copy, retrieve, apply). |
+| **Blue button** | A step that prepares something (browse, run the pre-flight, save). |
+| **Grey outlined button** | A side action (rescan, discard, open a folder). |
+| **Red button** | Destructive: it resets or replaces something. It always asks first and keeps a backup. |
+| **Table row highlighted in blue** | The row is *selected*. Click a row to select it; click it again to un-select. There are no tick boxes. |
+| **Double-click a table cell** | Edits the cell. Press **Enter** to accept it; most tables then need a *Save* button. |
+| **Red / amber / no colour** | Red = must fix. Amber = needs your decision. No colour = fine. |
+| **Coloured box with a link** (for example *Codebook review →*) | The app tells you what to do next; click the link to go there. |
+
+### Your first session in six clicks
+
+1. **Study** tab → *Browse folders...* → pick the study folder → *Create the folder*.
+2. **Study** tab → select the datasets → *Copy selected files to input*.
+3. **Blind & QC** → *1. Pre-flight* → *Run pre-flight* → accept what suits you with *Apply suggestions*.
+4. **Blind & QC** → *2. Run blinding* → *Run blinding*. The first run stops once, on purpose.
+5. **Codebook review** → answer the amber and red rows → type your name → *I have reviewed the codebook*. Then run the blinding again.
+6. **Blind & QC** → *3. QC result* → read it. Share only the files in `output`.
+
+The **Workflow** tab shows exactly where you are in these steps for the selected study.
+
+### Workflow tab: where am I, and what is next?
+
+![The Workflow tab with the steps of the selected study](inst/app/www/docs/screenshots/02-workflow-tab.png)
+
+*Figure 2. A selected synthetic study. Completed steps have green markers; more steps continue below the screen.*
+
+**Purpose.** A to-do list for the selected study. It tells you which step is done, which is waiting for you, and which has failed, and it jumps you to the right tab.
+
+**When you need it.** First, to see the overall picture; later, whenever you come back to a study and do not remember where you stopped.
+
+| Control | What it does |
+|---|---|
+| **How to blind a study** card | Short description of the tool and a table that tells you whether your PC dataset needs Workflow 1 (PC has the concentrations) or Workflow 2 (PC has no concentrations, the lab sent them separately). The app checks this for you once PC is in `input`. |
+| **Steps for the selected study** | Seven steps. A **green bar and tick** = done, an **amber bar and empty circle** = still to do, a **red bar and cross** = needs attention (for example a failed QC), a **grey bar and dash** = not needed for this study. |
+| **Go to ... links** (end of each step) | Open the tab where that step is done (Study, Prepare PC, Blind & QC, Codebook review, Retrieve). |
+| **Good to know** card | The rules you must remember: share only `output`; keep the whole `private` folder; blinded data is pseudonymised, not anonymised. |
+| **Open the full user guide** | Shows this guide inside the app. |
+
+### Study tab: choose the study and put the datasets into `input`
+
+![The Study tab: three cards, 1. Choose the study folder, 2. Copy the datasets to blind into input, 3. Status](inst/app/www/docs/screenshots/03-study-tab.png)
+
+*Figure 3. The separate mock study and its source dataset selections. Blue rows are selected; scroll down for the remaining files and Status card.*
+
+**Purpose.** Tell the app which study you work on and which datasets to blind. The app never changes your original files: it **copies** the chosen datasets into its own `input` folder.
+
+**When you need it.** At the start of every study, and again when new data arrive (see [New data for the same study](#new-data-for-the-same-study)).
+
+**Card 1. Choose the study folder**
+
+| Control | What it does |
+|---|---|
+| **Browse folders...** (blue) | Opens a folder tree. Pick the study's folder; the layout inside it does not matter. |
+| **...or paste the full path** + **Use this path** | The same, by typing or pasting a path. Quotes around the path are fine. |
+| **...or a recent study** | A list of studies you used before. Choosing one opens it. |
+| *Study folder:* line | Confirms which folder was chosen. |
+| **Create the Universal Blinder folder** box (appears once a folder is chosen and has no `UB_` folder yet) | **Study number** is read from STUDYID; you can change it. The grey block shows the folders that will be created. **Create the folder** (green) makes `UB_<StudyNumber>` with `input`, `output`, `private` and the settings file. An existing `UB_` folder is opened, never overwritten. |
+
+**Card 2. Copy the datasets to blind into input**
+
+| Control | What it does |
+|---|---|
+| **Dataset table** | Every dataset the app found under the study folder, with the profile it recognises (PC, ADNCA, EX, ...). The targets, exposure datasets and linked datasets are already selected (blue). Click a row to select or un-select it. Include at least one exposure dataset (EX, EC or ADEX). |
+| **Copy selected files to input** (green) | Copies the selected files into `input`. The button shows how many rows are selected. |
+| **Rescan** | Looks again for datasets, for example after you added files to the study folder. |
+| **Open input folder** | Opens `input` in Windows Explorer. Use it to drop in a file by hand, such as the lab's results file for Workflow 2. |
+
+**Card 3. Status**
+
+| Control | What it does |
+|---|---|
+| **PC notice** | A green, amber or blue box about PC. If PC has no concentrations it asks whether the lab sent a results file, with a **Recheck** button (after you copied that file into `input`) and **Go to Prepare PC**. |
+| **Status list** | The study folder, what is in `input`, and the status of the key, the codebook and the last QC. |
+| **Saved settings box** and **Reset settings to defaults** (red) | Lists the choices you saved that differ from the defaults. The reset asks first and keeps a backup. See [Start a study again from scratch](#start-a-study-again-from-scratch). |
+
+### Prepare PC tab: only when PC has no concentrations (Workflow 2 and 3)
+
+![The Prepare PC tab: mock results file, column mappings and analyte translations](inst/app/www/docs/screenshots/04-prepare-pc-tab.png)
+
+*Figure 4. Mock PC without concentrations, with lab_results.csv selected and three analytes mapped. This tab is skipped when PC already has results.*
+
+![Figure 4a. The lower mappings: visit translations, optional result fields, ADNCA cross-check and the Run card.](inst/app/www/docs/screenshots/14-prepare-pc-mappings.png)
+
+*Figure 4a. The lower mappings: visit translations, optional result fields, ADNCA cross-check and the Run card.*
+
+![Figure 4b. Workflow 3 controls at the bottom of Prepare PC. Enable separate blinded lab release only after reviewing matching and the selected columns.](inst/app/www/docs/screenshots/15-workflow3-lab-release.png)
+
+*Figure 4b. Workflow 3 controls at the bottom of Prepare PC. Enable separate blinded lab release only after reviewing matching and the selected columns.*
+
+**Purpose.** Some PC datasets contain the samples but not the results; the lab sends the results in a separate CSV or Excel file. This tab puts those results into PC before blinding (Workflow 2), or, when they cannot be matched, prepares the lab file to be released blinded next to PC (Workflow 3).
+
+**When you need it.** Only if the top of the tab (or the Workflow and Study tabs) says PC has no results. Otherwise skip it. Step-by-step: [Workflow 2](#workflow-2-pc-without-results-results-in-a-separate-file) and [Workflow 3](#workflow-3-the-results-cant-be-put-into-pc-release-the-lab-file-blinded).
+
+| Card and control | What it does |
+|---|---|
+| **1. Results file and its columns** | |
+| *Results file in input* | The lab file you copied into `input` (CSV or Excel). |
+| *Excel sheet* | Sheet name or number; blank = the first sheet. |
+| **Read the column names** | Reads the file's headers so the pick lists below can be filled. |
+| *Subject, Visit, Planned time, Concentration* (required) and *Unit, LLOQ, Time-point name, Analyte, Specimen* (optional) | Tell the app which column of the lab file holds what. |
+| **2. Analytes and translations** | |
+| *One analyte* / *Several analytes (parent + metabolite)* (radio buttons) | One analyte in the file: type the PCTESTCD and PCTEST that PC already uses. Several: fill the table with the PCTESTCD for each analyte name in the lab file. |
+| *Visit names that differ from PC.VISIT* and *Time points whose hours differ from PC.PCTPTNUM* tables | Translate the lab's spelling or hours into PC's (for example a Day 2 predose recorded as 24 h). **Add row** adds a line; double-click a cell to edit. |
+| *Cross-check the results against (its AVAL)* | Optionally compares the merged results with an existing ADNCA/ADPC. |
+| **3. Run** | |
+| **Save settings** | Stores the choices above without running. |
+| **Put the results into PC** (green) | Merges the results into PC. The tables below show what matched and what did not. |
+| **Open highlighted HTML report** | Opens the matching report with problems highlighted. |
+| **4. Workflow 3** | |
+| *The results can't be merged into PC: release the lab file blinded instead* (tick box) | Switches to Workflow 3. |
+| *Other lab columns to release* | Extra columns of the lab file to keep (dates are shifted, drug names coded). |
+| **Check matching** | A dry run: shows how many lab rows match a PC record, without writing anything. |
+
+### Study settings tab: the rarely needed options
+
+![The Study settings tab with its collapsible sections](inst/app/www/docs/screenshots/05-study-settings-tab.png)
+
+*Figure 5. Expand the relevant settings section, edit its table and save the changes at the bottom.*
+
+**Purpose.** All the study-specific choices, saved in `blind_options.json` next to `input`. Most studies need few or none.
+
+**When you need it.** When the pre-flight, the QC result or the AI assistant tells you to change a setting that cannot be applied with one click.
+
+The tab is a stack of **collapsible sections**. Click a section's title to open it.
+
+| Section | Use it to |
+|---|---|
+| **Dataset aliases** | Tell the app that a file with an unusual name has the structure of a known one (for example ADCONC is an ADNCA). |
+| **Treatment abbreviations** / **Analyte abbreviations** / **Other codes of an analyte** | Teach the app short names or extra codes of a drug or analyte so they are replaced in free text too. |
+| **Other private text** | Any other text that identifies the study and must be replaced everywhere. |
+| **Rename variables** | Rename variables whose **name** contains a drug fragment. |
+| **Blank variables** | Empty extra variables in the released data. |
+| **Leave variables out of the release** | Remove variables from `output` (they come back on retrieval), for example RACE. |
+| **Blank where a condition holds** | Empty variables on rows where an original variable has certain values (default: planned doses in mg/m²). |
+| **QC waivers** | Accept a QC finding after a documented review: the reason and the reviewer's name are recorded. |
+| **Configuration changes for this study** | Common cases as switches, and a JSON box for anything else (checked when you save). |
+
+In every table: **Add row** adds a line, click rows and **Delete selected rows** removes them, double-click a cell to edit it. Nothing is stored until you click **Save settings** (blue); **Discard changes** returns to the saved version. Every save keeps a backup.
+
+### Codebook review tab: check what replaces what
+
+![The Codebook review tab with amber rows that need a decision](inst/app/www/docs/screenshots/06-codebook-review-tab.png)
+
+*Figure 6. Two synthetic treatment abbreviations need a decision. The ACTUAL_VALUE column is private in a real study; only invented values are shown here.*
+
+**Purpose.** The codebook lists every drug, analyte, arm and cohort name and the code that replaces it (TRT01, ANL01, ARM01, ...). You confirm that the replacements are right before anything is released.
+
+**When you need it.** After the first *Run blinding*, which stops once because the codebook is new. You work **entirely in the app**; `codebook.csv` never has to be opened. Details: [Step 4](#step-4-codebook-review-answer-the-rows-and-confirm-the-review).
+
+| Control | What it does |
+|---|---|
+| **Rows needing attention only** (tick box) | Shows only the rows with a question; un-tick it to see the whole codebook. |
+| **Counts** (next to the tick box) | How many rows are amber (decide) and red (answer). |
+| **Amber row** | The CHECK column asks a question. Read it, check ACTUAL_VALUE and BLINDED_VALUE, then select the row. |
+| **Mark the highlighted rows as decided** (green) | Empties CHECK for the selected rows and saves. The button shows how many rows are selected. |
+| **Red row** | A code is missing (`?`). Double-click the `?` in BLINDED_VALUE, type a code (or `-` to leave the text as it is) and press Enter. |
+| **Save codebook** (blue) | Saves your edits; the previous version is kept in `private\codebook_backup`. |
+| **Discard changes** | Goes back to the saved codebook. |
+| **Open highlighted HTML** / **Open in Excel** / **Import decisions from Excel** | Optional: review in a coloured web page or in Excel, then import your decisions back. |
+| **Ask the local AI model** | Asks a local model for codebook suggestions. Real names never go to Claude. |
+| **Your name** and **I have reviewed the codebook** | Shown when no row needs an answer. Type your name and click the button; the run is released only after this confirmation. |
+| **Codebook review done** (green box with a link) | Appears when the review is confirmed; the link takes you back to *Run blinding*. |
+
+### Blind & QC tab: check, run and read the result
+
+This tab has three sub-tabs, in the order you use them.
+
+**1. Pre-flight**
+
+![Blind & QC, sub-tab 1 Pre-flight, with its findings table and the Apply suggestions button](inst/app/www/docs/screenshots/07-preflight.png)
+
+*Figure 7. Pre-flight findings from the mock study. Select accepted suggestions and apply them; read conditional suggestions before deciding.*
+
+**Purpose.** A safety check of the datasets in `input` *before* blinding: identifying variables the rules do not cover, analyte names equal to their code, free text with dates, a missing exposure dataset, and so on. It changes nothing by itself.
+
+| Control | What it does |
+|---|---|
+| **Run pre-flight** (blue) | Runs the check and lists what it found. |
+| **Findings table** | One row per finding with a suggested setting. Red rows are the ones QC is likely to fail on. Click a row to select it. |
+| **Apply suggestions** (green) | Saves the selected suggestions into the study settings (with a backup) and runs the pre-flight again. The files in `input` never change. Rows that offer a choice ("... or ...") or a condition ("If ...") are not applied: decide them in *Study settings*. |
+| **Explain these with the AI assistant** | Opens the AI assistant with these findings. |
+| **Saved settings** box (below the table) | The choices you already made, with *Reset settings to defaults*. |
+| *Nothing left to decide* | The table is empty: you are done. Rows you leave in the table stay as they are, by your choice. |
+
+**2. Run blinding**
+
+![Blind & QC, sub-tab 2 Run blinding, with the codebook hint and the log](inst/app/www/docs/screenshots/08-run-blinding.png)
+
+*Figure 8. The codebook gate prevents another run until outstanding rows are answered and the review is confirmed. This checkpoint is expected.*
+
+**Purpose.** The button that blinds the data, checks it and, when QC allows, releases it into `output`.
+
+| Control | What it does |
+|---|---|
+| **Run blinding** (large green button) | Blinds, runs QC and releases. |
+| **Blue box** (before the first run) | Reminds you that the first run stops once for the codebook review. |
+| **Amber box with *Codebook review →*** | *N codebook row(s) to review*; the link opens that tab. |
+| **Result box** | Green when released. A red box says *NOTHING WAS RELEASED* and lists the failed checks, with the buttons **Open 1. Pre-flight**, **Open 3. QC result** and **Ask the AI why**. The log is never sent to the AI. |
+| **Log** (grey panel) | The run's log, `private\logs\blind.log`. |
+
+If PC has no results, a window offers **Go to Prepare PC**, **Release the lab file blinded (Workflow 3)** or **Continue anyway**.
+
+**3. QC result**
+
+![Blind & QC, sub-tab 3 QC result, with the WARN badge and disclosure findings](inst/app/www/docs/screenshots/09-qc-result.png)
+
+*Figure 9. The actual demonstration result is WARN, with two ADSL disclosure warnings and no FAIL findings. Review warnings before sharing; WARN is not automatic approval.*
+
+![Figure 9a. Scroll below the findings for the QC summary and release manifest, including the released files and their SHA-256 hashes.](inst/app/www/docs/screenshots/13-release-manifest.png)
+
+*Figure 9a. Scroll below the findings for the QC summary and release manifest, including the released files and their SHA-256 hashes.*
+
+**Purpose.** Tells you whether the blinded data may be shared.
+
+| Control | What it does |
+|---|---|
+| **Badge** | **PASS** (nothing found), **WARN** (released; read each warning), or **FAIL** (nothing released). |
+| **Counts** | Number of findings by severity. |
+| **Findings table** | Dataset, check, variable and detail of each finding. |
+| **Ask the AI about the selected finding** | Sends the selected finding, with real values masked, to the AI assistant. |
+| **Open output folder** | Opens `output`, the only folder you may share. |
+| **qc_summary.md** and **RELEASE_MANIFEST.md** | The two documents that go with the release; they are shown here as well as in `output`. |
+
+### Retrieve tab: from a reviewer's finding back to the original record
+
+![The Retrieve tab: findings on the left, the editable table and the Retrieve button on the right](inst/app/www/docs/screenshots/10-retrieve-tab.png)
+
+*Figure 10. A mock finding pasted with its header and loaded into the findings table. UBRECID comes from the synthetic blinded PC output; use identifiers from your own release.*
+
+**Purpose.** A reviewer sees only blinded data. When they report a finding, this tab finds the **original** records behind it, using the private key.
+
+**When you need it.** After the recipient has reviewed the blinded data and sent you findings. Details: [Reviewing the blinded data and getting the original records back](#reviewing-the-blinded-data-and-getting-the-original-records-back).
+
+| Control | What it does |
+|---|---|
+| **Upload findings.csv** | Loads a findings file from the reviewer. |
+| **...or paste from Excel** + **Use pasted rows** | Paste the rows with their header line, then click the button. |
+| **Add an empty row** / **Clear** | Type a finding by hand / start again. |
+| **Findings table** | One row per finding (UBRECID or SUBJID, APROFILE, ATEST, AVISIT, ... and the reviewer's FINDING text). Double-click a cell to edit. |
+| **Retrieve the original records** (green) | Shows the original records in the app and writes them to `private\retrieved`. |
+
+### AI assistant tab: optional help from Claude or a local model
+
+![The AI assistant tab: Connection on the left, Ask on the right](inst/app/www/docs/screenshots/11-ai-assistant-tab.png)
+
+*Figure 11. Optional connection and question controls. No API key is displayed and no request was submitted for this guide; model choices depend on your installation.*
+
+**Purpose.** Explains findings, suggests settings and codebook decisions, and reviews the blinded data. It is optional and never changes anything until you apply a suggestion. What may be sent where is described in [The AI assistant](#the-ai-assistant).
+
+| Control | What it does |
+|---|---|
+| **Model** (radio buttons) | Claude (cloud), a local Ollama model, or a local OpenAI-compatible server. |
+| **API key** | For Claude: used for this session only and never saved. Alternatively set `ANTHROPIC_API_KEY` in `.Renviron`. |
+| **Claude model** / **Server address**, **List installed models**, **Local model** | Choose the model. |
+| **Test connection** | Checks that the model answers. |
+| **What may be sent** | The rules the app enforces. A request containing a real value is blocked before it leaves your computer. |
+| **Task** | Ask about the workflow; triage pre-flight / QC; suggest codebook decisions; suggest settings; review the blinded output; check unexpected input. |
+| **Your question** | Optional extra instructions. |
+| **Preview what will be sent** | Shows the exact text first. |
+| **Send** (blue) | Sends it. The answer appears below. |
+| **Suggestions** table and **Apply** (green) | Select the rows you agree with and apply them to the study settings (with a backup). Rows marked *explanation only* are never applied. |
+
+### Setup / About tab: is everything installed?
+
+![The Setup / About tab with the installation check](inst/app/www/docs/screenshots/12-setup-about-tab.png)
+
+*Figure 12. Installation checks for the documented app. Installed dependency versions and local paths can differ on your computer.*
+
+**Purpose.** A quick installation check and the pointers you need at set-up time.
+
+| Control | What it does |
+|---|---|
+| **Installation check** | Lists each required R package and its version; **MISSING** means install it (see [Install and start](#install-and-start)). Also shows the Universal Blinder and R versions. |
+| **About** | The location of the study-folder template, how to start the app, and how to set `ANTHROPIC_API_KEY`. |
+| **Open the user guide** | Shows this guide in the app. |
+
+---
 
 ## The workflow at a glance
 

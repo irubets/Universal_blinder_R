@@ -1,0 +1,32 @@
+<dialog class="guide-viewer" aria-labelledby="guide-viewer-title">
+<header><p id="guide-viewer-title">Full-size image — scroll to inspect. Press Escape to close.</p><button type="button" autofocus>Close image</button></header>
+<div class="guide-image-scroll" tabindex="0" role="region" aria-label="Full-size image; use arrow keys to scroll"><img alt=""></div>
+</dialog>
+<script>
+(() => {
+  const viewer = document.querySelector('.guide-viewer');
+  if (!viewer || typeof viewer.showModal !== 'function') return;
+  const expanded = viewer.querySelector('img');
+  let opener;
+  const open = image => {
+    opener = image;
+    expanded.src = image.src;
+    expanded.alt = image.alt;
+    viewer.showModal();
+    const scroller = viewer.querySelector('.guide-image-scroll');
+    scroller.scrollTop = scroller.scrollLeft = 0;
+  };
+  document.querySelectorAll('body > p img').forEach(image => {
+    image.tabIndex = 0;
+    image.setAttribute('role', 'button');
+    image.setAttribute('aria-label', 'Enlarge image: ' + image.alt);
+    image.title = 'Click or press Enter to view at full size';
+    image.addEventListener('click', () => open(image));
+    image.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(image); }
+    });
+  });
+  viewer.querySelector('button').addEventListener('click', () => viewer.close());
+  viewer.addEventListener('close', () => { expanded.removeAttribute('src'); opener?.focus({preventScroll:true}); });
+})();
+</script>
